@@ -97,3 +97,17 @@ for i, status in enumerate(kanban_columns):
                 <div style="font-size: 0.9em; color: #4CAF50; font-weight: bold; margin-top: 4px;">⚡ {mw_text}</div>
             </div>
             """, unsafe_allow_html=True)
+
+
+# --- Navigation Links ---
+st.markdown("---")
+st.markdown("### Navigation")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.page_link("app.py", label="Data Editor", icon="🏢")
+with col2:
+    st.page_link("pages/1_Kanban_Board.py", label="Kanban Board", icon="📋")
+with col3:
+    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
+with col4:
+    st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")

@@ -54,3 +54,17 @@ for _, row in df.iterrows():
         # The news is already formatted as markdown bullet links by the worker
         st.markdown(row['recent_news'])
         st.markdown("---")
+
+
+# --- Navigation Links ---
+st.markdown("---")
+st.markdown("### Navigation")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.page_link("app.py", label="Data Editor", icon="🏢")
+with col2:
+    st.page_link("pages/1_Kanban_Board.py", label="Kanban Board", icon="📋")
+with col3:
+    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
+with col4:
+    st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")
