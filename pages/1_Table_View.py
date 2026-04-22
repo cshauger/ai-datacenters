@@ -53,9 +53,16 @@ else:
 # --- Navigation Links ---
 st.markdown("---")
 st.markdown("### Navigation")
+
+# External link to GPU Pricing Tracker
+st.markdown("🎯 **Related Tools:**")
+st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
+
+st.markdown("---")
+
 col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
-    st.page_link("app.py", label="Kanban Board", icon="📋")
+    st.page_link("pages/0_AI_Datacenter_Tracker.py", label="AI Datacenter Tracker", icon="📋")
 with col2:
     st.page_link("pages/1_Table_View.py", label="Data Directory", icon="🏢")
 with col3:
