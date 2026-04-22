@@ -5,7 +5,7 @@ import os
 
 st.set_page_config(page_title="Kanban Board", page_icon="📋", layout="wide")
 st.title("📋 Datacenter Kanban Board")
-st.markdown("Visualize datacenters by status and drill down into specific companies.")
+st.markdown("Visualize datacenters grouped by Company and broken down by Pipeline Status.")
 
 db_url = os.environ.get("DATABASE_URL")
 if not db_url:
@@ -41,60 +41,56 @@ df['company'] = df['company'].fillna('Unknown')
 df['estimated_capacity_mw'] = df['estimated_capacity_mw'].fillna(0)
 df['location'] = df['location'].fillna('N/A')
 
-# Drill down by company
-companies = sorted(df['company'].unique().tolist())
-selected_company = st.selectbox("🔍 Select a Company to Drill Down", ["All Companies"] + companies)
-
-if selected_company != "All Companies":
-    df = df[df['company'] == selected_company]
-
-st.markdown("---")
-
-# Define standard Kanban columns (Statuses) in a logical progression
-base_statuses = [
-    'Planned',
-    'Under construction',
-    'Operational/expanding',
+# Target statuses order requested by user (plus Under construction)
+target_statuses = [
     'Fully operational',
+    'Operational/expanding',
+    'Under construction',
+    'Planned',
     'Decommissioned/abandoned'
 ]
 
-# Find any other statuses in the DB not in our standard list
-db_statuses = df['status'].unique().tolist()
-kanban_columns = base_statuses.copy()
-for s in db_statuses:
-    if s not in kanban_columns:
-        kanban_columns.append(s)
+# Drill down by company
+companies = sorted(df['company'].unique().tolist())
+selected_company = st.selectbox("🔍 Filter to a specific Company", ["All Companies"] + companies)
 
-# Create columns for the board
-cols = st.columns(len(kanban_columns))
+if selected_company != "All Companies":
+    display_companies = [selected_company]
+else:
+    display_companies = companies
 
-# Render the cards grouped by company
-for i, status in enumerate(kanban_columns):
-    with cols[i]:
-        # Count items for header
-        status_df = df[df['status'] == status]
-        st.markdown(f"**{status} ({len(status_df)})**")
+st.markdown("---")
+
+# Render Kanban swimlanes per company
+for company in display_companies:
+    comp_df = df[df['company'] == company]
+    if comp_df.empty:
+        continue
         
-        # Group by company within this status column
-        grouped = status_df.groupby('company')
-        for company, group in grouped:
-            with st.expander(f"🏢 {company} ({len(group)})"):
-                for _, row in group.iterrows():
+    with st.expander(f"🏢 {company} ({len(comp_df)} properties)", expanded=True):
+        cols = st.columns(len(target_statuses))
+        
+        for i, status in enumerate(target_statuses):
+            with cols[i]:
+                status_df = comp_df[comp_df['status'] == status]
+                st.markdown(f"<div style='text-align: center; color: #888; font-size: 0.85em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>{status.upper()} ({len(status_df)})</div>", unsafe_allow_html=True)
+                
+                for _, row in status_df.iterrows():
                     mw_text = f"{int(row['estimated_capacity_mw'])} MW" if row['estimated_capacity_mw'] > 0 else "TBD MW"
                     
                     st.markdown(f"""
                     <div style="
-                        border: 1px solid #444; 
+                        border: 1px solid #555; 
                         border-radius: 6px; 
-                        padding: 8px; 
-                        margin-bottom: 8px; 
-                        background-color: #2e2e2e; 
+                        padding: 10px; 
+                        margin-bottom: 10px; 
+                        background-color: #262626; 
                         color: #eee;
+                        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
                     ">
-                        <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 2px;">{row['name']}</div>
-                        <div style="font-size: 0.8em; color: #ccc;">📍 {row['location']}</div>
-                        <div style="font-size: 0.8em; color: #4CAF50; font-weight: bold; margin-top: 2px;">⚡ {mw_text}</div>
+                        <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 4px; line-height: 1.2;">{row['name']}</div>
+                        <div style="font-size: 0.8em; color: #bbb; line-height: 1.2;">📍 {row['location']}</div>
+                        <div style="font-size: 0.85em; color: #4CAF50; font-weight: bold; margin-top: 6px;">⚡ {mw_text}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
