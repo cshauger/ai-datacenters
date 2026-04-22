@@ -29,7 +29,15 @@ def load_data():
         st.error(f"Could not load data: {e}")
         return pd.DataFrame()
 
+@st.cache_data(ttl=10)
+def load_deals():
+    try:
+        return pd.read_sql("SELECT * FROM capacity_deals", engine)
+    except Exception as e:
+        return pd.DataFrame()
+
 df = load_data()
+deals_df = load_deals()
 
 if df.empty:
     st.info("No data available to display.")
@@ -80,6 +88,16 @@ for company in display_companies:
         continue
         
     with st.expander(f"🏢 {company} ({len(comp_df)} properties)", expanded=True):
+        if not deals_df.empty:
+            comp_deals = deals_df[deals_df['company'] == company]
+            if not comp_deals.empty:
+                st.markdown("##### 🤝 Recent Capacity Deals")
+                for _, deal in comp_deals.iterrows():
+                    val = f" | 💰 {deal['deal_value_usd']}" if pd.notna(deal['deal_value_usd']) else ""
+                    mw = f" | ⚡ {int(deal['capacity_mw'])} MW" if pd.notna(deal['capacity_mw']) else ""
+                    st.info(f"**Partner:** {deal['partner_tenant']}{mw}{val} — *{deal['description']}*")
+                st.markdown("<br>", unsafe_allow_html=True)
+                
         cols = st.columns(len(target_statuses))
         
         for i, status in enumerate(target_statuses):
