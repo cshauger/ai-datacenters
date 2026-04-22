@@ -73,12 +73,14 @@ for _, row in df.iterrows():
 # --- Navigation Links ---
 st.markdown("---")
 st.markdown("### Navigation")
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     st.page_link("app.py", label="Kanban Board", icon="📋")
 with col2:
     st.page_link("pages/1_Table_View.py", label="Data Directory", icon="🏢")
 with col3:
-    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
+    st.page_link("pages/4_Capacity_Deals.py", label="Capacity Deals", icon="🤝")
 with col4:
+    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
+with col5:
     st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")
