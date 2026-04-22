@@ -50,7 +50,19 @@ target_statuses = [
     'Decommissioned/abandoned'
 ]
 
+
+st.markdown('''
+<style>
+    /* Increase font size and bold the company names in the expander headers */
+    div[data-testid="stExpander"] details summary p {
+        font-size: 1.4em !important;
+        font-weight: bold !important;
+    }
+</style>
+''', unsafe_allow_html=True)
+
 # Drill down by company
+
 companies = sorted(df['company'].unique().tolist())
 selected_company = st.selectbox("🔍 Filter to a specific Company", ["All Companies"] + companies)
 
