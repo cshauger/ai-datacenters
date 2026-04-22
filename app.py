@@ -1,4 +1,4 @@
 import streamlit as st
 
-# Redirect to Kanban Board page
-st.switch_page("pages/0_Kanban_Board.py")
+# Redirect to AI Datacenter Tracker
+st.switch_page("pages/0_AI_Datacenter_Tracker.py")
