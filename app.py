@@ -36,32 +36,15 @@ def load_data():
 df = load_data()
 
 if not df.empty:
-    # Render the Airtable-like spreadsheet editor
-    st.write("### Edit Datacenters")
-    edited_df = st.data_editor(
+    # Render a read-only dataframe
+    st.write("### Datacenters Directory")
+    st.dataframe(
         df,
-        num_rows="dynamic",        # Allows adding and deleting rows
         use_container_width=True,
-        key="datacenter_editor",
         column_config={
             "id": None,  # Hides the ID column from the UI
         }
     )
-
-    # Save changes button
-    if st.button("💾 Save Changes to Database"):
-        try:
-            with st.spinner("Saving directly to PostgreSQL..."):
-                # Auto-generate IDs for new rows added via the UI
-                if "id" in edited_df.columns:
-                    edited_df["id"] = edited_df["id"].apply(lambda x: str(uuid.uuid4()) if pd.isna(x) or str(x).strip() == "" else x)
-                
-                # For simplicity, this rewrites the table with the new dataframe contents
-                edited_df.to_sql("ai_datacenters", engine, if_exists="replace", index=False)
-                st.cache_data.clear()
-            st.success("Successfully saved changes to the database!")
-        except Exception as e:
-            st.error(f"Error saving data: {e}")
 else:
     st.info("No data found or table doesn't exist yet.")
 
