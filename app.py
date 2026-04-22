@@ -108,6 +108,8 @@ for company in display_companies:
                 for _, row in status_df.iterrows():
                     mw_text = f"{int(row['estimated_capacity_mw'])} MW" if row['estimated_capacity_mw'] > 0 else "TBD MW"
                     
+                    source_link = f"<div style='font-size: 0.8em; margin-top: 4px;'><a href='{row['source_url']}' target='_blank' style='color: #4da6ff; text-decoration: none;'>🔗 Source Document</a></div>" if 'source_url' in row and pd.notna(row['source_url']) and str(row['source_url']).strip() else ""
+                    
                     st.markdown(f"""
                     <div style="
                         border: 1px solid #555; 
@@ -121,6 +123,7 @@ for company in display_companies:
                         <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 4px; line-height: 1.2;">{row['name']}</div>
                         <div style="font-size: 0.8em; color: #bbb; line-height: 1.2;">📍 {row['location']}</div>
                         <div style="font-size: 0.85em; color: #4CAF50; font-weight: bold; margin-top: 6px;">⚡ {mw_text}</div>
+                        {source_link}
                     </div>
                     """, unsafe_allow_html=True)
 

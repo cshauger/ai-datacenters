@@ -43,6 +43,7 @@ if not df.empty:
         use_container_width=True,
         column_config={
             "id": None,  # Hides the ID column from the UI
+            "source_url": st.column_config.LinkColumn("Source URL"),
         }
     )
 else:
