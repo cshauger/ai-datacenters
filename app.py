@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import os
+import uuid
 
 st.set_page_config(page_title="AI Datacenters Tracker", page_icon="🏢", layout="wide")
 st.title("🏢 AI Datacenters Tracker")
@@ -41,13 +42,20 @@ if not df.empty:
         df,
         num_rows="dynamic",        # Allows adding and deleting rows
         use_container_width=True,
-        key="datacenter_editor"
+        key="datacenter_editor",
+        column_config={
+            "id": None,  # Hides the ID column from the UI
+        }
     )
 
     # Save changes button
     if st.button("💾 Save Changes to Database"):
         try:
             with st.spinner("Saving directly to PostgreSQL..."):
+                # Auto-generate IDs for new rows added via the UI
+                if "id" in edited_df.columns:
+                    edited_df["id"] = edited_df["id"].apply(lambda x: str(uuid.uuid4()) if pd.isna(x) or str(x).strip() == "" else x)
+                
                 # For simplicity, this rewrites the table with the new dataframe contents
                 edited_df.to_sql("ai_datacenters", engine, if_exists="replace", index=False)
                 st.cache_data.clear()
