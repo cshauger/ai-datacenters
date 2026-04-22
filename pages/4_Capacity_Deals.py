@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import os
-import uuid
+from collections import defaultdict
 
-st.set_page_config(page_title="Capacity Deals", page_icon="🤝", layout="wide")
+st.set_page_config(page_title="Capacity Deals Kanban", page_icon="🤝", layout="wide")
 st.title("🤝 Capacity Deal Announcements")
 st.markdown("Track capacity reservations, hyperscaler leases, and major infrastructure deals.")
 
@@ -35,34 +35,134 @@ def load_deals():
 
 df = load_deals()
 
-st.write("### Deal Editor")
-edited_df = st.data_editor(
-    df,
-    num_rows="dynamic",
-    use_container_width=True,
-    key="deals_editor",
-    column_config={
-        "id": None,  # Hide ID
-        "created_at": None, # Hide timestamp
-        "announcement_date": st.column_config.DateColumn("Announcement Date"),
-        "source_url": st.column_config.LinkColumn("Source URL"),
-        "capacity_mw": st.column_config.NumberColumn("Capacity (MW)", format="%d")
-    }
-)
+if df.empty:
+    st.info("No capacity deals found. Add deals to see them here.")
+    st.stop()
 
-if st.button("💾 Save Deals to Database"):
-    try:
-        with st.spinner("Saving directly to PostgreSQL..."):
-            if "id" in edited_df.columns:
-                edited_df["id"] = edited_df["id"].apply(lambda x: str(uuid.uuid4()) if pd.isna(x) or str(x).strip() == "" else x)
-            edited_df.to_sql("capacity_deals", engine, if_exists="replace", index=False)
-            st.cache_data.clear()
-        st.success("Successfully saved changes to the database!")
-    except Exception as e:
-        st.error(f"Error saving data: {e}")
+# Parse deals into Kanban structure (company = provider, partner_tenant = customer)
+by_company = defaultdict(list)
+all_partners = set()
 
+for _, row in df.iterrows():
+    company = row['company']
+    partner = row['partner_tenant']
+    
+    by_company[company].append({
+        'partner': partner,
+        'capacity_mw': row['capacity_mw'],
+        'value': row['deal_value_usd'],
+        'date': row['announcement_date'],
+        'description': row['description'],
+        'source': row['source_url']
+    })
+    all_partners.add(partner)
 
-# --- Navigation Links ---
+# Summary stats
+st.markdown(f"**{len(by_company)} providers** × **{len(all_partners)} partners** = **{len(df)} total deals**")
+st.markdown("---")
+
+# Create Kanban board
+for company in sorted(by_company.keys()):
+    company_deals = by_company[company]
+    
+    # Calculate total capacity for this company
+    total_mw = sum(d['capacity_mw'] for d in company_deals if pd.notna(d['capacity_mw']))
+    
+    with st.expander(f"🏢 {company} — {len(company_deals)} deals, {total_mw:,.0f} MW total", expanded=False):
+        
+        # Group deals by partner for this company
+        partners_in_company = defaultdict(list)
+        for deal in company_deals:
+            partners_in_company[deal['partner']].append(deal)
+        
+        # Display in rows of 4 partners
+        partner_list = sorted(partners_in_company.keys())
+        
+        for i in range(0, len(partner_list), 4):
+            row_partners = partner_list[i:i+4]
+            cols = st.columns(len(row_partners))
+            
+            for j, partner in enumerate(row_partners):
+                partner_deals = partners_in_company[partner]
+                
+                with cols[j]:
+                    st.markdown(f"### {partner}")
+                    
+                    for deal in partner_deals:
+                        st.markdown("**Deal:**")
+                        
+                        if pd.notna(deal['capacity_mw']):
+                            st.markdown(f"⚡ **{deal['capacity_mw']:,.0f} MW**")
+                        else:
+                            st.markdown("⚡ Capacity TBD")
+                        
+                        if pd.notna(deal['value']) and deal['value']:
+                            st.markdown(f"💰 {deal['value']}")
+                        
+                        if pd.notna(deal['date']):
+                            st.markdown(f"📅 {deal['date'].strftime('%b %d, %Y')}")
+                        
+                        if pd.notna(deal['description']) and deal['description']:
+                            with st.expander("ℹ️ Details", expanded=False):
+                                st.write(deal['description'])
+                        
+                        if pd.notna(deal['source']) and deal['source']:
+                            st.markdown(f"[🔗 Source]({deal['source']})")
+                        
+                        if len(partner_deals) > 1:
+                            st.markdown("---")
+            
+            if i + 4 < len(partner_list):
+                st.markdown("---")
+
+# Summary statistics
+st.markdown("---")
+st.subheader("📊 Summary")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Total Deals", len(df))
+
+with col2:
+    st.metric("Providers", len(by_company))
+
+with col3:
+    st.metric("Partners", len(all_partners))
+
+# Recent deals
+st.markdown("### 🆕 Recent Deals")
+
+recent_df = df.sort_values('announcement_date', ascending=False, na_position='last').head(5)
+
+for _, row in recent_df.iterrows():
+    st.markdown(f"**{row['company']}** → **{row['partner_tenant']}**")
+    
+    cols = st.columns([2, 2, 2, 1])
+    
+    with cols[0]:
+        if pd.notna(row['capacity_mw']):
+            st.write(f"⚡ {row['capacity_mw']:,.0f} MW")
+        else:
+            st.write("⚡ Capacity TBD")
+    
+    with cols[1]:
+        if pd.notna(row['deal_value_usd']) and row['deal_value_usd']:
+            st.write(f"💰 {row['deal_value_usd']}")
+        else:
+            st.write("💰 Value undisclosed")
+    
+    with cols[2]:
+        if pd.notna(row['announcement_date']):
+            st.write(f"📅 {row['announcement_date'].strftime('%B %d, %Y')}")
+    
+    with cols[3]:
+        if pd.notna(row['source_url']) and row['source_url']:
+            st.markdown(f"[🔗]({row['source_url']})")
+    
+    st.markdown("---")
+
+# Navigation Links
 st.markdown("---")
 st.markdown("### Navigation")
 col1, col2, col3, col4, col5 = st.columns(5)
