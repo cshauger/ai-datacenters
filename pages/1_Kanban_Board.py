@@ -71,32 +71,34 @@ for s in db_statuses:
 # Create columns for the board
 cols = st.columns(len(kanban_columns))
 
-# Render the cards
+# Render the cards grouped by company
 for i, status in enumerate(kanban_columns):
     with cols[i]:
         # Count items for header
         status_df = df[df['status'] == status]
         st.markdown(f"**{status} ({len(status_df)})**")
         
-        for _, row in status_df.iterrows():
-            mw_text = f"{int(row['estimated_capacity_mw'])} MW" if row['estimated_capacity_mw'] > 0 else "TBD MW"
-            
-            st.markdown(f"""
-            <div style="
-                border: 1px solid #444; 
-                border-radius: 6px; 
-                padding: 12px; 
-                margin-bottom: 12px; 
-                background-color: #1e1e1e; 
-                color: #eee;
-                box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            ">
-                <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 4px;">{row['name']}</div>
-                <div style="font-size: 0.9em; color: #aaa;">🏢 {row['company']}</div>
-                <div style="font-size: 0.9em; color: #aaa;">📍 {row['location']}</div>
-                <div style="font-size: 0.9em; color: #4CAF50; font-weight: bold; margin-top: 4px;">⚡ {mw_text}</div>
-            </div>
-            """, unsafe_allow_html=True)
+        # Group by company within this status column
+        grouped = status_df.groupby('company')
+        for company, group in grouped:
+            with st.expander(f"🏢 {company} ({len(group)})"):
+                for _, row in group.iterrows():
+                    mw_text = f"{int(row['estimated_capacity_mw'])} MW" if row['estimated_capacity_mw'] > 0 else "TBD MW"
+                    
+                    st.markdown(f"""
+                    <div style="
+                        border: 1px solid #444; 
+                        border-radius: 6px; 
+                        padding: 8px; 
+                        margin-bottom: 8px; 
+                        background-color: #2e2e2e; 
+                        color: #eee;
+                    ">
+                        <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 2px;">{row['name']}</div>
+                        <div style="font-size: 0.8em; color: #ccc;">📍 {row['location']}</div>
+                        <div style="font-size: 0.8em; color: #4CAF50; font-weight: bold; margin-top: 2px;">⚡ {mw_text}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
 
 # --- Navigation Links ---
