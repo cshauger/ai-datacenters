@@ -53,12 +53,10 @@ st.markdown("---")
 # Define standard Kanban columns (Statuses) in a logical progression
 base_statuses = [
     'Planned',
-    'Active/Planned',
-    'Under Construction/Planned',
-    'Under Construction',
-    'Active/Under Construction',
-    'Active/Expanding',
-    'Active'
+    'Under construction',
+    'Operational/expanding',
+    'Fully operational',
+    'Decommissioned/abandoned'
 ]
 
 # Find any other statuses in the DB not in our standard list
