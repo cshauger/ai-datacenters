@@ -38,6 +38,14 @@ if not st.session_state.authenticated:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
+# Sidebar - External Links
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔗 Related Tools")
+    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
+    st.markdown("---")
+
+
 st.set_page_config(page_title="Kanban Board", page_icon="📋", layout="wide")
 st.title("📋 Datacenter Kanban Board")
 st.markdown("Visualize datacenters grouped by Company and broken down by Pipeline Status.")
