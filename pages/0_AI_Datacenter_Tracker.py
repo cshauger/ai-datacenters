@@ -3,8 +3,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 import os
 
-
-import os
+# MUST BE FIRST! - Set page config before anything else
+st.set_page_config(page_title="AI Datacenter Tracker", page_icon="📋", layout="wide")
 
 # ============================================
 # AUTHENTICATION
@@ -17,14 +17,6 @@ if 'authenticated' not in st.session_state:
 
 # Authentication check
 if not st.session_state.authenticated:
-    st.set_page_config(page_title="Login - AI Datacenter Tracker", layout="centered")
-
-# Sidebar - External Links
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 🔗 Related Tools")
-    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
-    st.markdown("---")
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
     
@@ -45,14 +37,13 @@ with st.sidebar:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
-st.set_page_config(page_title="Kanban Board", page_icon="📋", layout="wide")
-
-# Sidebar - External Links
+# Sidebar - External Links (only shown after auth)
 with st.sidebar:
     st.markdown("---")
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
+
 st.title("📋 Datacenter Kanban Board")
 st.markdown("Visualize datacenters grouped by Company and broken down by Pipeline Status.")
 
@@ -89,48 +80,28 @@ df = load_data()
 deals_df = load_deals()
 
 if df.empty:
-    st.info("No data available to display.")
+    st.info("No datacenter data found.")
     st.stop()
 
-# Fill missing values for cleaner display
-df['status'] = df['status'].fillna('Unknown')
-df['company'] = df['company'].fillna('Unknown')
+# Handle missing values
 df['estimated_capacity_mw'] = df['estimated_capacity_mw'].fillna(0)
-df['location'] = df['location'].fillna('N/A')
 
-# Target statuses order requested by user (plus Under construction)
-target_statuses = [
-    'Fully operational',
-    'Operational/expanding',
-    'Under construction',
-    'Planned',
-    'Decommissioned/abandoned'
-]
+# Get unique values for filters
+all_companies = sorted(df['company'].dropna().unique().tolist())
+all_statuses = sorted(df['status'].dropna().unique().tolist())
 
+# Sidebar filters
+st.sidebar.markdown("### Filters")
+selected_companies = st.sidebar.multiselect("Companies", all_companies, default=all_companies)
+selected_statuses = st.sidebar.multiselect("Status", all_statuses, default=all_statuses)
 
-st.markdown('''
-<style>
-    /* Increase font size and bold the company names in the expander headers */
-    div[data-testid="stExpander"] details summary p {
-        font-size: 1.4em !important;
-        font-weight: bold !important;
-    }
-</style>
-''', unsafe_allow_html=True)
+# Filter data
+df = df[df['company'].isin(selected_companies) & df['status'].isin(selected_statuses)]
 
-# Drill down by company
+# Display logic
+target_statuses = selected_statuses if selected_statuses else all_statuses
+display_companies = selected_companies if selected_companies else all_companies
 
-companies = sorted(df['company'].unique().tolist())
-selected_company = st.selectbox("🔍 Filter to a specific Company", ["All Companies"] + companies)
-
-if selected_company != "All Companies":
-    display_companies = [selected_company]
-else:
-    display_companies = companies
-
-st.markdown("---")
-
-# Render Kanban swimlanes per company
 for company in display_companies:
     comp_df = df[df['company'] == company]
     if comp_df.empty:
@@ -152,42 +123,17 @@ for company in display_companies:
         for i, status in enumerate(target_statuses):
             with cols[i]:
                 status_df = comp_df[comp_df['status'] == status]
-                st.markdown(f"<div style='text-align: center; color: #888; font-size: 0.85em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>{status.upper()} ({len(status_df)})</div>", unsafe_allow_html=True)
+                
+                st.markdown(f"**{status}** ({len(status_df)})")
                 
                 for _, row in status_df.iterrows():
+                    name_text = row['name'] if pd.notna(row['name']) else "Unnamed Property"
                     mw_text = f"{int(row['estimated_capacity_mw'])} MW" if row['estimated_capacity_mw'] > 0 else "TBD MW"
+                    loc_text = f"{row['location']}" if pd.notna(row['location']) else "Location TBD"
                     
-                    source_link = f"<div style='font-size: 0.8em; margin-top: 4px;'><a href='{row['source_url']}' target='_blank' style='color: #4da6ff; text-decoration: none;'>🔗 Source Document</a></div>" if 'source_url' in row and pd.notna(row['source_url']) and str(row['source_url']).strip() else ""
+                    source_link = ""
+                    if pd.notna(row.get('source_url')) and row['source_url']:
+                        source_link = f"\n\n[🔗 Source]({row['source_url']})"
                     
-                    st.markdown(f"""
-                    <div style="
-                        border: 1px solid #555; 
-                        border-radius: 6px; 
-                        padding: 10px; 
-                        margin-bottom: 10px; 
-                        background-color: #262626; 
-                        color: #eee;
-                        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-                    ">
-                        <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 4px; line-height: 1.2;">{row['name']}</div>
-                        <div style="font-size: 0.8em; color: #bbb; line-height: 1.2;">📍 {row['location']}</div>
-                        <div style="font-size: 0.85em; color: #4CAF50; font-weight: bold; margin-top: 6px;">⚡ {mw_text}</div>
-                        {source_link}
-                    </div>
-                    """, unsafe_allow_html=True)
-
-
-# --- Navigation Links ---
-st.markdown("---")
-st.markdown("### Navigation")
-col1, col2, col3, col4, col5 = st.columns(5)
-with col1:
-    st.page_link("app.py", label="Kanban Board", icon="📋")
-with col2:
-    st.page_link("pages/1_Table_View.py", label="Data Directory", icon="🏢")
-with col3:
-    st.page_link("pages/4_Capacity_Deals.py", label="Capacity Deals", icon="🤝")
-with col4:
-    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
-with col5:
-    st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")
+                    card_text = f"**{name_text}**\n\n⚡ {mw_text}\n\n📍 {loc_text}{source_link}"
+                    st.info(card_text)
