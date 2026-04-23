@@ -98,6 +98,13 @@ selected_statuses = st.sidebar.multiselect("Status", all_statuses, default=all_s
 # Filter data
 df = df[df['company'].isin(selected_companies) & df['status'].isin(selected_statuses)]
 
+# Debug output
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🐛 Debug Info")
+st.sidebar.write(f"Total datacenters: {len(df)}")
+st.sidebar.write(f"Companies selected: {len(selected_companies)}")
+st.sidebar.write(f"Statuses selected: {len(selected_statuses)}")
+
 # Display logic
 target_statuses = selected_statuses if selected_statuses else all_statuses
 display_companies = selected_companies if selected_companies else all_companies
