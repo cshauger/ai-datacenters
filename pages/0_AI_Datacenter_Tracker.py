@@ -3,6 +3,41 @@ import pandas as pd
 from sqlalchemy import create_engine
 import os
 
+
+import os
+
+# ============================================
+# AUTHENTICATION
+# ============================================
+DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
+
+# Initialize session state
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
+# Authentication check
+if not st.session_state.authenticated:
+    st.set_page_config(page_title="Login - AI Datacenter Tracker", layout="centered")
+    st.title("🔒 AI Datacenter Tracker")
+    st.markdown("### Login Required")
+    
+    password_input = st.text_input("Enter password:", type="password", key="password")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🔓 Login", use_container_width=True):
+            if password_input == DASHBOARD_PASSWORD:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("❌ Incorrect password")
+    
+    st.stop()
+
+# ============================================
+# AUTHENTICATED CONTENT BELOW
+# ============================================
+
 st.set_page_config(page_title="Kanban Board", page_icon="📋", layout="wide")
 st.title("📋 Datacenter Kanban Board")
 st.markdown("Visualize datacenters grouped by Company and broken down by Pipeline Status.")
