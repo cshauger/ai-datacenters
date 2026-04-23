@@ -19,6 +19,13 @@ if 'authenticated' not in st.session_state:
 # Authentication check
 if not st.session_state.authenticated:
     st.set_page_config(page_title="Login - AI Datacenter Tracker", layout="centered")
+
+# Sidebar - External Links
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔗 Related Tools")
+    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
+    st.markdown("---")
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
     
@@ -39,15 +46,14 @@ if not st.session_state.authenticated:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
+st.set_page_config(page_title="AI Datacenters Tracker", page_icon="🏢", layout="wide")
+
 # Sidebar - External Links
 with st.sidebar:
     st.markdown("---")
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
-
-
-st.set_page_config(page_title="AI Datacenters Tracker", page_icon="🏢", layout="wide")
 st.title("🏢 AI Datacenters Tracker")
 st.markdown("Airtable-style interface connected to the DigitalOcean Managed Database.")
 
