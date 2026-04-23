@@ -9,6 +9,13 @@ import os
 # ============================================
 # AUTHENTICATION
 # ============================================
+
+# MUST BE FIRST! - Set page config before anything else
+st.set_page_config(layout="wide")
+
+# ============================================
+# AUTHENTICATION
+# ============================================
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
 # Initialize session state
@@ -17,10 +24,34 @@ if 'authenticated' not in st.session_state:
 
 # Authentication check
 if not st.session_state.authenticated:
-    st.set_page_config(page_title="Login - AI Datacenter Tracker", layout="centered")
+    st.title("🔒 AI Datacenter Tracker")
+    st.markdown("### Login Required")
+    
+    password_input = st.text_input("Enter password:", type="password", key="password")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🔓 Login", use_container_width=True):
+            if password_input == DASHBOARD_PASSWORD:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("❌ Incorrect password")
+    
+    st.stop()
 
-# Sidebar - External Links
+# ============================================
+# AUTHENTICATED CONTENT BELOW
+# ============================================
+
+# Sidebar - External Links (only shown after auth)
 with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔗 Related Tools")
+    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
+    st.markdown("---")
+
+
     st.markdown("---")
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
@@ -45,7 +76,6 @@ with st.sidebar:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
-st.set_page_config(page_title="Intelligence Blog", page_icon="📰", layout="wide")
 
 # Sidebar - External Links
 with st.sidebar:
