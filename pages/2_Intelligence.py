@@ -38,6 +38,14 @@ if not st.session_state.authenticated:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
+# Sidebar - External Links
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔗 Related Tools")
+    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
+    st.markdown("---")
+
+
 st.set_page_config(page_title="Datacenter Intelligence", page_icon="📡", layout="wide")
 st.title("📡 Datacenter Intelligence")
 st.markdown("Automated news, permitting, and satellite imagery.")
