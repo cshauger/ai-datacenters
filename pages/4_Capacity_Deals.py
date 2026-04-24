@@ -2,28 +2,19 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import os
+import uuid
 from collections import defaultdict
 
-
-import os
-
 # ============================================
-# AUTHENTICATION
+# AUTHENTICATION & SETUP
 # ============================================
+st.set_page_config(page_title="Capacity Deals", page_icon="🤝", layout="wide")
 
-# MUST BE FIRST! - Set page config before anything else
-st.set_page_config(layout="wide")
-
-# ============================================
-# AUTHENTICATION
-# ============================================
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
-# Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 
-# Authentication check
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
@@ -45,45 +36,12 @@ if not st.session_state.authenticated:
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
-# Sidebar - External Links (only shown after auth)
 with st.sidebar:
     st.markdown("---")
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
 
-
-    st.markdown("---")
-    st.markdown("### 🔗 Related Tools")
-    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
-    st.markdown("---")
-    st.title("🔒 AI Datacenter Tracker")
-    st.markdown("### Login Required")
-    
-    password_input = st.text_input("Enter password:", type="password", key="password")
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("🔓 Login", use_container_width=True):
-            if password_input == DASHBOARD_PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("❌ Incorrect password")
-    
-    st.stop()
-
-# ============================================
-# AUTHENTICATED CONTENT BELOW
-# ============================================
-
-
-# Sidebar - External Links
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 🔗 Related Tools")
-    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
-    st.markdown("---")
 st.title("🤝 Capacity Deal Announcements")
 st.markdown("Track capacity reservations, hyperscaler leases, and major infrastructure deals.")
 
@@ -115,133 +73,101 @@ def load_deals():
 df = load_deals()
 
 if df.empty:
-    st.info("No capacity deals found. Add deals to see them here.")
+    st.info("No deal data available to display.")
     st.stop()
 
-# Parse deals into Kanban structure (company = provider, partner_tenant = customer)
-by_company = defaultdict(list)
-all_partners = set()
+# --- Kanban View Logic ---
+df['company'] = df['company'].fillna('Unknown Provider')
+df['partner_tenant'] = df['partner_tenant'].fillna('Unknown Partner')
+df['capacity_mw'] = df['capacity_mw'].fillna(0)
 
-for _, row in df.iterrows():
-    company = row['company']
-    partner = row['partner_tenant']
-    
-    by_company[company].append({
-        'partner': partner,
-        'capacity_mw': row['capacity_mw'],
-        'value': row['deal_value_usd'],
-        'date': row['announcement_date'],
-        'description': row['description'],
-        'source': row['source_url']
-    })
-    all_partners.add(partner)
+companies = sorted(df['company'].unique().tolist())
+selected_company = st.selectbox("🔍 Filter to a specific Provider", ["All Providers"] + companies)
 
-# Summary stats
-st.markdown(f"**{len(by_company)} providers** × **{len(all_partners)} partners** = **{len(df)} total deals**")
+if selected_company != "All Providers":
+    display_companies = [selected_company]
+else:
+    display_companies = companies
+
+st.markdown('''
+<style>
+    div[data-testid="stExpander"] details summary p {
+        font-size: 1.4em !important;
+        font-weight: bold !important;
+    }
+</style>
+''', unsafe_allow_html=True)
+
 st.markdown("---")
 
-# Create Kanban board
-for company in sorted(by_company.keys()):
-    company_deals = by_company[company]
-    
-    # Calculate total capacity for this company
-    total_mw = sum(d['capacity_mw'] for d in company_deals if pd.notna(d['capacity_mw']))
-    
-    with st.expander(f"🏢 {company} — {len(company_deals)} deals, {total_mw:,.0f} MW total", expanded=False):
+for company in display_companies:
+    comp_df = df[df['company'] == company]
+    if comp_df.empty:
+        continue
         
-        # Group deals by partner for this company
-        partners_in_company = defaultdict(list)
-        for deal in company_deals:
-            partners_in_company[deal['partner']].append(deal)
+    with st.expander(f"🏢 {company} ({len(comp_df)} deals)", expanded=True):
+        relevant_partners = sorted(comp_df['partner_tenant'].unique().tolist())
+        cols = st.columns(len(relevant_partners))
         
-        # Display in rows of 4 partners
-        partner_list = sorted(partners_in_company.keys())
-        
-        for i in range(0, len(partner_list), 4):
-            row_partners = partner_list[i:i+4]
-            cols = st.columns(len(row_partners))
-            
-            for j, partner in enumerate(row_partners):
-                partner_deals = partners_in_company[partner]
+        for i, partner in enumerate(relevant_partners):
+            with cols[i]:
+                partner_df = comp_df[comp_df['partner_tenant'] == partner]
+                st.markdown(f"<div style='text-align: center; color: #888; font-size: 0.85em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px;'>{partner.upper()}</div>", unsafe_allow_html=True)
                 
-                with cols[j]:
-                    st.markdown(f"### {partner}")
+                for _, row in partner_df.iterrows():
+                    val = f"💰 {row['deal_value_usd']}" if pd.notna(row['deal_value_usd']) and str(row['deal_value_usd']).strip() else ""
+                    mw_text = f"{int(row['capacity_mw'])} MW" if row['capacity_mw'] > 0 else "TBD MW"
+                    date_str = row['announcement_date'].strftime("%Y-%m-%d") if pd.notna(row['announcement_date']) else "Unknown Date"
+                    source_link = f"<div style='font-size: 0.8em; margin-top: 6px;'><a href='{row['source_url']}' target='_blank' style='color: #4da6ff; text-decoration: none;'>🔗 Source Announcement</a></div>" if 'source_url' in row and pd.notna(row['source_url']) and str(row['source_url']).strip() else ""
                     
-                    for deal in partner_deals:
-                        st.markdown("**Deal:**")
-                        
-                        if pd.notna(deal['capacity_mw']):
-                            st.markdown(f"⚡ **{deal['capacity_mw']:,.0f} MW**")
-                        else:
-                            st.markdown("⚡ Capacity TBD")
-                        
-                        if pd.notna(deal['value']) and deal['value']:
-                            st.markdown(f"💰 {deal['value']}")
-                        
-                        if pd.notna(deal['date']):
-                            st.markdown(f"📅 {deal['date'].strftime('%b %d, %Y')}")
-                        
-                        if pd.notna(deal['description']) and deal['description']:
-                            with st.expander("ℹ️ Details", expanded=False):
-                                st.write(deal['description'])
-                        
-                        if pd.notna(deal['source']) and deal['source']:
-                            st.markdown(f"[🔗 Source]({deal['source']})")
-                        
-                        if len(partner_deals) > 1:
-                            st.markdown("---")
-            
-            if i + 4 < len(partner_list):
-                st.markdown("---")
+                    st.markdown(f"""
+                    <div style="
+                        border: 1px solid #555; 
+                        border-radius: 6px; 
+                        padding: 10px; 
+                        margin-bottom: 10px; 
+                        background-color: #262626; 
+                        color: #eee;
+                        box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+                    ">
+                        <div style="font-size: 0.8em; color: #bbb; line-height: 1.2; margin-bottom: 4px;">📅 {date_str}</div>
+                        <div style="font-weight: bold; font-size: 1.0em; color: #4CAF50; margin-bottom: 4px;">⚡ {mw_text}</div>
+                        <div style="font-size: 0.9em; font-weight: bold; margin-bottom: 6px;">{val}</div>
+                        <div style="font-size: 0.85em; color: #ddd; line-height: 1.3;">{row['description']}</div>
+                        {source_link}
+                    </div>
+                    """, unsafe_allow_html=True)
 
-# Summary statistics
 st.markdown("---")
-st.subheader("📊 Summary")
+st.write("### 📝 Raw Data Editor")
+st.caption("Expand below to view or edit the raw records.")
+with st.expander("Show Data Editor", expanded=False):
+    edited_df = st.data_editor(
+        df,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="deals_editor",
+        column_config={
+            "id": None,
+            "created_at": None,
+            "announcement_date": st.column_config.DateColumn("Announcement Date"),
+            "source_url": st.column_config.LinkColumn("Source URL"),
+            "capacity_mw": st.column_config.NumberColumn("Capacity (MW)", format="%d")
+        }
+    )
 
-col1, col2, col3 = st.columns(3)
+    if st.button("💾 Save Deals to Database"):
+        try:
+            with st.spinner("Saving directly to PostgreSQL..."):
+                if "id" in edited_df.columns:
+                    edited_df["id"] = edited_df["id"].apply(lambda x: str(uuid.uuid4()) if pd.isna(x) or str(x).strip() == "" else x)
+                edited_df.to_sql("capacity_deals", engine, if_exists="replace", index=False)
+                st.cache_data.clear()
+            st.success("Successfully saved changes to the database! Refresh the page to see them on the board.")
+        except Exception as e:
+            st.error(f"Error saving data: {e}")
 
-with col1:
-    st.metric("Total Deals", len(df))
-
-with col2:
-    st.metric("Providers", len(by_company))
-
-with col3:
-    st.metric("Partners", len(all_partners))
-
-# Recent deals
-st.markdown("### 🆕 Recent Deals")
-
-recent_df = df.sort_values('announcement_date', ascending=False, na_position='last').head(5)
-
-for _, row in recent_df.iterrows():
-    st.markdown(f"**{row['company']}** → **{row['partner_tenant']}**")
-    
-    cols = st.columns([2, 2, 2, 1])
-    
-    with cols[0]:
-        if pd.notna(row['capacity_mw']):
-            st.write(f"⚡ {row['capacity_mw']:,.0f} MW")
-        else:
-            st.write("⚡ Capacity TBD")
-    
-    with cols[1]:
-        if pd.notna(row['deal_value_usd']) and row['deal_value_usd']:
-            st.write(f"💰 {row['deal_value_usd']}")
-        else:
-            st.write("💰 Value undisclosed")
-    
-    with cols[2]:
-        if pd.notna(row['announcement_date']):
-            st.write(f"📅 {row['announcement_date'].strftime('%B %d, %Y')}")
-    
-    with cols[3]:
-        if pd.notna(row['source_url']) and row['source_url']:
-            st.markdown(f"[🔗]({row['source_url']})")
-    
-    st.markdown("---")
-
-# Navigation Links
+# --- Navigation Links ---
 st.markdown("---")
 st.markdown("### Navigation")
 col1, col2, col3, col4, col5 = st.columns(5)
