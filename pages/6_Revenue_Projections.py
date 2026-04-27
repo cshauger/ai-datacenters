@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 import os
 
 # MUST BE FIRST! - Set page config before anything else
-st.set_page_config(page_title="Projected MW Additions", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Quarterly AI Revenue Projections", page_icon="💰", layout="wide")
 
 # ============================================
 # AUTHENTICATION
@@ -44,8 +44,8 @@ with st.sidebar:
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
 
-st.title("⚡ Projected Megawatt Additions by Quarter")
-st.markdown("Track quarterly datacenter capacity additions by company and property")
+st.title("💰 Quarterly AI Revenue Projections")
+st.markdown("Track quarterly AI revenue projections by company and property")
 
 # Database connection
 db_url = os.environ.get("DATABASE_URL")
@@ -90,7 +90,7 @@ def load_projections():
             q1_2028, q2_2028, q3_2028, q4_2028,
             notes,
             estimated_completion_date
-        FROM quarterly_mw_projections
+        FROM quarterly_revenue_projections
         ORDER BY company, property_name;
         """
         return pd.read_sql(query, engine)
@@ -114,7 +114,7 @@ companies = get_companies()
 tab1, tab2, tab3 = st.tabs(["📊 By Company Summary", "🏢 By Property Detail", "➕ Add/Edit Data"])
 
 with tab1:
-    st.markdown("### Quarterly MW Additions - Company Summary")
+    st.markdown("### Quarterly AI Revenue - Company Summary")
     
     if df.empty:
         st.info("No projection data yet. Add some in the 'Add/Edit Data' tab!")
@@ -127,26 +127,26 @@ with tab1:
         display_df.columns = ['Company'] + [quarter_labels[q] for q in historical_quarters + future_quarters]
         
         # Calculate totals
-        display_df['Total (MW)'] = display_df[[quarter_labels[q] for q in historical_quarters + future_quarters]].sum(axis=1)
+        display_df['Total (Revenue)'] = display_df[[quarter_labels[q] for q in historical_quarters + future_quarters]].sum(axis=1)
         
         # Display with formatting
         st.dataframe(
             display_df.style.format({
                 **{quarter_labels[q]: '{:.0f}' for q in historical_quarters + future_quarters},
-                'Total (MW)': '{:.0f}'
+                'Total (Revenue)': '{:.0f}'
             }),
             use_container_width=True,
             height=600
         )
         
         # Chart
-        st.markdown("### 📈 Quarterly Capacity Additions Chart")
+        st.markdown("### 📈 Quarterly AI Revenue Chart")
         chart_data = company_summary.set_index('company')[historical_quarters + future_quarters].T
         chart_data.index = [quarter_labels[q] for q in chart_data.index]
         st.bar_chart(chart_data, height=400)
 
 with tab2:
-    st.markdown("### Quarterly MW Additions - Property Detail")
+    st.markdown("### Quarterly AI Revenue - Property Detail")
     
     if df.empty:
         st.info("No projection data yet.")
@@ -189,14 +189,14 @@ with tab3:
     with col2:
         property_input = st.text_input("Property Name (e.g., 'Finland 5', 'Vineland NJ')", key="add_property")
     
-    st.markdown("#### Historical Actuals (MW)")
+    st.markdown("#### Historical Actuals (Revenue)")
     hist_cols = st.columns(4)
     hist_values = {}
     for i, q in enumerate(historical_quarters):
         with hist_cols[i]:
             hist_values[q] = st.number_input(quarter_labels[q], min_value=0.0, step=10.0, key=f"hist_{q}")
     
-    st.markdown("#### Future Estimates (MW)")
+    st.markdown("#### Future Estimates (Revenue)")
     
     # Split into 3 rows of 4 quarters each
     for year_offset in range(3):
@@ -223,7 +223,7 @@ with tab3:
                 update_cols = ', '.join([f"{col} = EXCLUDED.{col}" for col in cols if col not in ['company', 'property_name']])
                 
                 query = f"""
-                INSERT INTO quarterly_mw_projections ({', '.join(cols)})
+                INSERT INTO quarterly_revenue_projections ({', '.join(cols)})
                 VALUES ({placeholders})
                 ON CONFLICT (company, property_name)
                 DO UPDATE SET {update_cols}, updated_at = CURRENT_TIMESTAMP;
@@ -263,7 +263,7 @@ with tab3:
             
             if st.button("🗑️ Delete This Projection", key="delete_btn"):
                 try:
-                    query = "DELETE FROM quarterly_mw_projections WHERE company = %s AND property_name = %s;"
+                    query = "DELETE FROM quarterly_revenue_projections WHERE company = %s AND property_name = %s;"
                     with engine.connect() as conn:
                         conn.execute(query, (selected_row['company'], selected_row['property_name']))
                         conn.commit()
