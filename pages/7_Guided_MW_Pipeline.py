@@ -2,53 +2,31 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
 import os
-import uuid
 
+st.set_page_config(page_title="Guided MW Pipeline", page_icon="🎯", layout="wide")
 
-import os
-
-# ============================================
-# AUTHENTICATION
-# ============================================
-
-# MUST BE FIRST! - Set page config before anything else
-st.set_page_config(layout="wide")
-
-# ============================================
-# AUTHENTICATION
-# ============================================
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
-# Initialize session state
 if 'authenticated' not in st.session_state:
-    # Check if they have the cookie
     if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
         st.session_state.authenticated = True
     else:
         st.session_state.authenticated = False
 
-# Authentication check
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
-    
-    # Use a unique key for the password input to avoid collisions across pages
     import uuid
     page_key = f"password_{str(uuid.uuid4())[:8]}"
     password_input = st.text_input("Enter password:", type="password", key=page_key)
-    
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        # Use a unique key for the login button
         btn_key = f"login_{str(uuid.uuid4())[:8]}"
         if st.button("🔓 Login", use_container_width=True, key=btn_key):
             if password_input == DASHBOARD_PASSWORD:
                 st.session_state.authenticated = True
-                
-                # Try to set a cookie if the component is available, otherwise rely on session state
                 try:
                     import streamlit.components.v1 as components
-                    # Set a cookie that expires in 30 days
                     components.html(
                         f'''
                         <script>
@@ -63,95 +41,91 @@ if not st.session_state.authenticated:
                 st.rerun()
             else:
                 st.error("❌ Incorrect password")
-    
     st.stop()
 
-# ============================================
-# AUTHENTICATED CONTENT BELOW
-# ============================================
-
-# Sidebar - External Links (only shown after auth)
 with st.sidebar:
     st.markdown("---")
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
 
+st.title("🎯 Guided MW Pipeline by Quarter")
+st.markdown("Track official company-level guided capacity additions by quarter.")
 
-    st.markdown("---")
-    st.markdown("### 🔗 Related Tools")
-    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
-    st.markdown("---")
-    st.title("🔒 AI Datacenter Tracker")
-    st.markdown("### Login Required")
-    
-    password_input = st.text_input("Enter password:", type="password", key="password")
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("🔓 Login", use_container_width=True):
-            if password_input == DASHBOARD_PASSWORD:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("❌ Incorrect password")
-    
-    st.stop()
-
-# ============================================
-# AUTHENTICATED CONTENT BELOW
-# ============================================
-
-
-# Sidebar - External Links
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 🔗 Related Tools")
-    st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
-    st.markdown("---")
-st.title("🏢 AI Datacenters Tracker")
-st.markdown("Airtable-style interface connected to the DigitalOcean Managed Database.")
-
-# Fetch the database URL that DigitalOcean automatically injects
 db_url = os.environ.get("DATABASE_URL")
 if not db_url:
-    st.warning("DATABASE_URL environment variable is missing. Please set it in the App Platform settings.")
+    st.warning("DATABASE_URL environment variable is missing.")
     st.stop()
-
-# SQLAlchemy requires the connection string to start with postgresql://
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-try:
-    engine = create_engine(db_url)
-except Exception as e:
-    st.error(f"Error creating database engine: {e}")
-    st.stop()
+@st.cache_resource
+def get_engine():
+    return create_engine(db_url)
+engine = get_engine()
 
-# Load data from the database
+historical_quarters = ['q1_2025', 'q2_2025', 'q3_2025', 'q4_2025']
+future_quarters = ['q1_2026', 'q2_2026', 'q3_2026', 'q4_2026', 'q1_2027', 'q2_2027', 'q3_2027', 'q4_2027', 'q1_2028', 'q2_2028', 'q3_2028', 'q4_2028']
+all_quarters = historical_quarters + future_quarters
+
+quarter_labels = {
+    'q1_2025': '1Q25', 'q2_2025': '2Q25', 'q3_2025': '3Q25', 'q4_2025': '4Q25',
+    'q1_2026': '1Q26E', 'q2_2026': '2Q26E', 'q3_2026': '3Q26E', 'q4_2026': '4Q26E',
+    'q1_2027': '1Q27E', 'q2_2027': '2Q27E', 'q3_2027': '3Q27E', 'q4_2027': '4Q27E',
+    'q1_2028': '1Q28E', 'q2_2028': '2Q28E', 'q3_2028': '3Q28E', 'q4_2028': '4Q28E'
+}
+
 @st.cache_data(ttl=10)
 def load_data():
+    query = "SELECT id, company, " + ", ".join(all_quarters) + ", notes FROM guided_mw_pipeline ORDER BY company;"
     try:
-        return pd.read_sql("SELECT * FROM ai_datacenters ORDER BY company, name;", engine)
+        return pd.read_sql(query, engine)
     except Exception as e:
         st.error(f"Could not load data: {e}")
         return pd.DataFrame()
 
 df = load_data()
 
-if not df.empty:
-    # Render a read-only dataframe
-    st.write("### Datacenters Directory")
-    st.dataframe(
+st.markdown("### 📝 Edit Company Guidance")
+st.caption("Expand below to view or edit the official company guidance.")
+with st.expander("Show Data Editor", expanded=True):
+    # Configure columns for the editor
+    col_config = { "id": None } # hide id
+    for q in all_quarters:
+        col_config[q] = st.column_config.NumberColumn(quarter_labels[q], format="%d")
+        
+    edited_df = st.data_editor(
         df,
         use_container_width=True,
-        column_config={
-            "id": None,  # Hides the ID column from the UI
-            "source_url": st.column_config.LinkColumn("Source URL"),
-        }
+        key="guided_editor",
+        hide_index=True,
+        column_config=col_config
     )
-else:
-    st.info("No data found or table doesn't exist yet.")
+
+    if st.button("💾 Save Guidance to Database"):
+        try:
+            with st.spinner("Saving directly to PostgreSQL..."):
+                edited_df.to_sql("guided_mw_pipeline", engine, if_exists="replace", index=False)
+                st.cache_data.clear()
+            st.success("Successfully saved changes!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error saving data: {e}")
+
+if not df.empty:
+    st.markdown("### 📈 Visual Summary")
+    
+    # Calculate totals
+    display_df = df.copy()
+    display_df['Total Guided MW'] = display_df[all_quarters].sum(axis=1)
+    
+    # Sort by total for the chart
+    top_companies = display_df.sort_values('Total Guided MW', ascending=False).head(10)
+    
+    chart_data = top_companies.set_index('company')[all_quarters].T
+    chart_data.index = [quarter_labels[q] for q in chart_data.index]
+    st.bar_chart(chart_data, height=500)
+
 
 
 # --- Navigation Links ---
