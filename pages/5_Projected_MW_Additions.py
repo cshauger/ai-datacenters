@@ -13,20 +13,45 @@ DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
+    # Check if they have the cookie
+    if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
+        st.session_state.authenticated = True
+    else:
+        st.session_state.authenticated = False
 
 # Authentication check
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
     
-    password_input = st.text_input("Enter password:", type="password", key="password")
+    # Use a unique key for the password input to avoid collisions across pages
+    import uuid
+    page_key = f"password_{str(uuid.uuid4())[:8]}"
+    password_input = st.text_input("Enter password:", type="password", key=page_key)
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🔓 Login", use_container_width=True):
+        # Use a unique key for the login button
+        btn_key = f"login_{str(uuid.uuid4())[:8]}"
+        if st.button("🔓 Login", use_container_width=True, key=btn_key):
             if password_input == DASHBOARD_PASSWORD:
                 st.session_state.authenticated = True
+                
+                # Try to set a cookie if the component is available, otherwise rely on session state
+                try:
+                    import streamlit.components.v1 as components
+                    # Set a cookie that expires in 30 days
+                    components.html(
+                        f'''
+                        <script>
+                            document.cookie = "auth_cookie={DASHBOARD_PASSWORD}; path=/; max-age=" + 30*24*60*60;
+                            window.parent.postMessage("reload", "*");
+                        </script>
+                        ''',
+                        height=0
+                    )
+                except:
+                    pass
                 st.rerun()
             else:
                 st.error("❌ Incorrect password")
