@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import os
 
-st.set_page_config(page_title="Guided MW Pipeline", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Hardware Tracker", page_icon="🖥️", layout="wide")
 
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
@@ -49,8 +49,8 @@ with st.sidebar:
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
 
-st.title("🎯 Guided MW Pipeline by Quarter")
-st.markdown("Track official company-level guided capacity additions by quarter.")
+st.title("🖥️ Datacenter Hardware Pricing")
+st.markdown("Track pricing and specs for critical datacenter components (CPUs, DRAM, NAND/SSDs).")
 
 db_url = os.environ.get("DATABASE_URL")
 if not db_url:
@@ -64,48 +64,54 @@ def get_engine():
     return create_engine(db_url)
 engine = get_engine()
 
-historical_quarters = ['q1_2025', 'q2_2025', 'q3_2025', 'q4_2025']
-future_quarters = ['q1_2026', 'q2_2026', 'q3_2026', 'q4_2026', 'q1_2027', 'q2_2027', 'q3_2027', 'q4_2027', 'q1_2028', 'q2_2028', 'q3_2028', 'q4_2028']
-all_quarters = historical_quarters + future_quarters
-
-quarter_labels = {
-    'q1_2025': '1Q25', 'q2_2025': '2Q25', 'q3_2025': '3Q25', 'q4_2025': '4Q25',
-    'q1_2026': '1Q26E', 'q2_2026': '2Q26E', 'q3_2026': '3Q26E', 'q4_2026': '4Q26E',
-    'q1_2027': '1Q27E', 'q2_2027': '2Q27E', 'q3_2027': '3Q27E', 'q4_2027': '4Q27E',
-    'q1_2028': '1Q28E', 'q2_2028': '2Q28E', 'q3_2028': '3Q28E', 'q4_2028': '4Q28E'
-}
-
 @st.cache_data(ttl=10)
-def load_data():
-    query = "SELECT id, company, " + ", ".join(all_quarters) + ", notes FROM guided_mw_pipeline ORDER BY company;"
+def load_hardware():
+    query = "SELECT id, component_category, manufacturer, product_name, capacity_or_speed, price_usd, date_recorded, notes FROM datacenter_hardware ORDER BY date_recorded DESC, component_category;"
     try:
         return pd.read_sql(query, engine)
     except Exception as e:
         st.error(f"Could not load data: {e}")
         return pd.DataFrame()
 
-df = load_data()
+df = load_hardware()
 
-st.markdown("### 📝 Edit Company Guidance")
-st.caption("Expand below to view or edit the official company guidance.")
+st.markdown("### 📝 Add / Edit Hardware Data")
 with st.expander("Show Data Editor", expanded=True):
-    # Configure columns for the editor
-    col_config = { "id": None } # hide id
-    for q in all_quarters:
-        col_config[q] = st.column_config.NumberColumn(quarter_labels[q], format="%d")
+    if df.empty:
+        df = pd.DataFrame(columns=["id", "component_category", "manufacturer", "product_name", "capacity_or_speed", "price_usd", "date_recorded", "notes"])
+    
+    col_config = {
+        "id": None, # hide id
+        "component_category": st.column_config.SelectboxColumn("Category", options=["CPU", "DRAM", "NAND Flash / SSD", "Networking", "Other"], required=True),
+        "manufacturer": st.column_config.TextColumn("Manufacturer"),
+        "product_name": st.column_config.TextColumn("Product Name"),
+        "capacity_or_speed": st.column_config.TextColumn("Capacity / Speed"),
+        "price_usd": st.column_config.NumberColumn("Price (USD)", format="$%.2f"),
+        "date_recorded": st.column_config.DateColumn("Date"),
+        "notes": st.column_config.TextColumn("Notes")
+    }
         
     edited_df = st.data_editor(
         df,
         use_container_width=True,
-        key="guided_editor",
+        key="hardware_editor",
         hide_index=True,
-        column_config=col_config
+        column_config=col_config,
+        num_rows="dynamic"
     )
 
-    if st.button("💾 Save Guidance to Database"):
+    if st.button("💾 Save Hardware Data"):
         try:
-            with st.spinner("Saving directly to PostgreSQL..."):
-                edited_df.to_sql("guided_mw_pipeline", engine, if_exists="replace", index=False)
+            with st.spinner("Saving to database..."):
+                with engine.begin() as conn:
+                    conn.execute(text("DELETE FROM datacenter_hardware;"))
+                    if not edited_df.empty:
+                        # Drop id to let it autoincrement
+                        if 'id' in edited_df.columns:
+                            save_df = edited_df.drop(columns=['id'])
+                        else:
+                            save_df = edited_df
+                        save_df.to_sql("datacenter_hardware", conn, if_exists="append", index=False)
                 st.cache_data.clear()
             st.success("Successfully saved changes!")
             st.rerun()
@@ -113,19 +119,18 @@ with st.expander("Show Data Editor", expanded=True):
             st.error(f"Error saving data: {e}")
 
 if not df.empty:
-    st.markdown("### 📈 Visual Summary")
+    st.markdown("---")
+    st.markdown("### 📈 Price Trends")
     
-    # Calculate totals
-    display_df = df.copy()
-    display_df['Total Guided MW'] = display_df[all_quarters].sum(axis=1)
+    categories = df['component_category'].unique()
+    selected_cat = st.selectbox("Select Category to Chart", categories)
     
-    # Sort by total for the chart
-    top_companies = display_df.sort_values('Total Guided MW', ascending=False).head(10)
-    
-    chart_data = top_companies.set_index('company')[all_quarters].T
-    chart_data.index = [quarter_labels[q] for q in chart_data.index]
-    st.bar_chart(chart_data, height=500)
-
+    cat_df = df[df['component_category'] == selected_cat].copy()
+    if not cat_df.empty and 'date_recorded' in cat_df.columns and 'price_usd' in cat_df.columns:
+        cat_df['date_recorded'] = pd.to_datetime(cat_df['date_recorded'])
+        # Pivot so each product is a line
+        chart_data = cat_df.pivot_table(index='date_recorded', columns='product_name', values='price_usd')
+        st.line_chart(chart_data)
 
 
 # --- Navigation Links ---

@@ -182,4 +182,4 @@ with col3:
     st.page_link("pages/7_Guided_MW_Pipeline.py", label="Guided MW", icon="🎯")
 with col4:
     st.page_link("pages/6_Revenue_Projections.py", label="Revenue", icon="💰")
-    st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")
+    st.page_link("pages/8_Hardware_Tracker.py", label="Hardware", icon="🖥️")
