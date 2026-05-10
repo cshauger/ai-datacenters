@@ -1,12 +1,12 @@
 import os
 import requests
-from bs4 import BeautifulSoup
+import re
 import psycopg2
 from datetime import datetime
 
 PG_URI = os.environ.get("DATABASE_URL")
 if not PG_URI:
-    print("No DATABASE_URL found.")
+    print("No DATABASE_URL found in environment.")
     exit(1)
 
 def get_db_connection():
@@ -16,17 +16,15 @@ def scrape_dramexchange():
     results = []
     try:
         res = requests.get("https://www.dramexchange.com/", headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
-        soup = BeautifulSoup(res.text, "html.parser")
-        
         # DRAM
-        dram_table = soup.find(id="tb_NationalDramSpotPrice")
-        if dram_table:
-            rows = dram_table.find_all("tr")[1:] # Skip header
-            for row in rows:
-                cols = row.find_all("td")
+        dram_block = re.search(r'id="tb_NationalDramSpotPrice"(.*?)</table>', res.text, re.IGNORECASE | re.DOTALL)
+        if dram_block:
+            rows = re.findall(r'<tr.*?>(.*?)</tr>', dram_block.group(1), re.IGNORECASE | re.DOTALL)
+            for row in rows[1:]:
+                cols = re.findall(r'<td.*?>(.*?)</td>', row, re.IGNORECASE | re.DOTALL)
                 if len(cols) >= 3:
-                    item = cols[0].text.strip()
-                    price = cols[2].text.strip() # Average price
+                    item = re.sub(r'<[^>]+>', '', cols[0]).strip()
+                    price = re.sub(r'<[^>]+>', '', cols[2]).strip()
                     try:
                         price_float = float(price)
                         results.append({
@@ -41,14 +39,14 @@ def scrape_dramexchange():
                         pass
 
         # NAND Flash
-        nand_table = soup.find(id="tb_NationalFlashSpotPrice")
-        if nand_table:
-            rows = nand_table.find_all("tr")[1:]
-            for row in rows:
-                cols = row.find_all("td")
+        nand_block = re.search(r'id="tb_NationalFlashSpotPrice"(.*?)</table>', res.text, re.IGNORECASE | re.DOTALL)
+        if nand_block:
+            rows = re.findall(r'<tr.*?>(.*?)</tr>', nand_block.group(1), re.IGNORECASE | re.DOTALL)
+            for row in rows[1:]:
+                cols = re.findall(r'<td.*?>(.*?)</td>', row, re.IGNORECASE | re.DOTALL)
                 if len(cols) >= 3:
-                    item = cols[0].text.strip()
-                    price = cols[2].text.strip()
+                    item = re.sub(r'<[^>]+>', '', cols[0]).strip()
+                    price = re.sub(r'<[^>]+>', '', cols[2]).strip()
                     try:
                         price_float = float(price)
                         results.append({
@@ -67,9 +65,6 @@ def scrape_dramexchange():
     return results
 
 def get_cpu_prices():
-    # Since live scraping B2B distributors often blocks GitHub Action IPs, 
-    # we simulate tracking a basket of key SKUs using a reliable fallback or public API.
-    # For now, we seed baseline prices that will be updated when market shifts are detected via news.
     return [
         {"category": "CPU", "mfg": "AMD", "name": "EPYC 9654 Genoa", "cap": "96-Core 2.4 GHz", "price": 11805.00, "notes": "Baseline B2B Disti Price"},
         {"category": "CPU", "mfg": "AMD", "name": "EPYC 9754 Bergamo", "cap": "128-Core 2.25 GHz", "price": 11900.00, "notes": "Baseline B2B Disti Price"},
@@ -77,9 +72,13 @@ def get_cpu_prices():
     ]
 
 def main():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+        exit(1)
+        
     items = scrape_dramexchange() + get_cpu_prices()
     
     insert_q = """
@@ -90,7 +89,6 @@ def main():
     
     count = 0
     for item in items:
-        # Check if we already inserted this item today to prevent duplicates
         cur.execute("""
             SELECT id FROM datacenter_hardware 
             WHERE product_name = %s AND date_recorded = CURRENT_DATE
@@ -105,7 +103,7 @@ def main():
     conn.commit()
     cur.close()
     conn.close()
-    print(f"Hardware Scraper completed successfully. Inserted {count} new price records.")
+    print(f"Inserted {count} new price records.")
 
 if __name__ == "__main__":
     main()
