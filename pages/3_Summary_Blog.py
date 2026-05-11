@@ -163,7 +163,7 @@ st.markdown("---")
 st.markdown("### Navigation")
 col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
-    st.page_link("app.py", label="Kanban", icon="📋")
+    st.page_link("pages/0_AI_Datacenter_Tracker.py", label="Kanban", icon="📋")
     st.page_link("pages/4_Capacity_Deals.py", label="Deals", icon="🤝")
 with col2:
     st.page_link("pages/1_Table_View.py", label="Directory", icon="🏢")

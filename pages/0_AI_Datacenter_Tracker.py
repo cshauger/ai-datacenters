@@ -13,33 +13,46 @@ DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
+    if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
+        st.session_state.authenticated = True
+    else:
+        st.session_state.authenticated = False
 
-# Authentication check
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
-    
-    password_input = st.text_input("Enter password:", type="password", key="password")
-    
+    import uuid
+    page_key = f"password_{str(uuid.uuid4())[:8]}"
+    password_input = st.text_input("Enter password:", type="password", key=page_key)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🔓 Login", use_container_width=True):
+        btn_key = f"login_{str(uuid.uuid4())[:8]}"
+        if st.button("🔓 Login", use_container_width=True, key=btn_key):
             if password_input == DASHBOARD_PASSWORD:
                 st.session_state.authenticated = True
+                try:
+                    import streamlit.components.v1 as components
+                    components.html(
+                        f'''
+                        <script>
+                            document.cookie = "auth_cookie={DASHBOARD_PASSWORD}; path=/; max-age=" + 30*24*60*60;
+                            window.parent.postMessage("reload", "*");
+                        </script>
+                        ''',
+                        height=0
+                    )
+                except:
+                    pass
                 st.rerun()
             else:
                 st.error("❌ Incorrect password")
-    
     st.stop()
 
 # ============================================
 # AUTHENTICATED CONTENT BELOW
 # ============================================
 
-# Sidebar - External Links (only shown after auth)
-with st.sidebar:
-    st.markdown("---")
+
     st.markdown("### 🔗 Related Tools")
     st.markdown("[GPU Pricing Tracker →](https://gpu-pricing-tracker-vaxov.ondigitalocean.app)")
     st.markdown("---")
@@ -144,3 +157,23 @@ for company in display_companies:
                     
                     card_text = f"**{name_text}**\n\n⚡ {mw_text}\n\n📍 {loc_text}{source_link}"
                     st.info(card_text)
+
+# --- Navigation Links ---
+st.markdown("---")
+st.markdown("### Navigation")
+col1, col2, col3, col4, col5 = st.columns(5)
+with col1:
+    st.page_link("pages/0_AI_Datacenter_Tracker.py", label="Kanban", icon="📋")
+    st.page_link("pages/4_Capacity_Deals.py", label="Deals", icon="🤝")
+with col2:
+    st.page_link("pages/1_Table_View.py", label="Directory", icon="🏢")
+    st.page_link("pages/2_Intelligence.py", label="Intelligence", icon="📡")
+with col3:
+    st.page_link("pages/5_Projected_MW_Additions.py", label="Property MW", icon="⚡")
+    st.page_link("pages/7_Guided_MW_Pipeline.py", label="Guided MW", icon="🎯")
+with col4:
+    st.page_link("pages/6_Revenue_Projections.py", label="Revenue", icon="💰")
+    st.page_link("pages/8_Hardware_Tracker.py", label="Hardware", icon="🖥️")
+with col5:
+    st.page_link("pages/9_GPU_Pricing.py", label="GPU Pricing", icon="📈")
+    st.page_link("pages/3_Summary_Blog.py", label="Summary Blog", icon="📰")
