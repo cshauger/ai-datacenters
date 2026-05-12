@@ -8,21 +8,23 @@ st.set_page_config(page_title="GPU Pricing Tracker", page_icon="📈", layout="w
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
 if 'authenticated' not in st.session_state:
-    if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
-        st.session_state.authenticated = True
-    else:
+    try:
+        if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
+            st.session_state.authenticated = True
+        else:
+            st.session_state.authenticated = False
+    except:
         st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
-    import uuid
-    page_key = f"password_{str(uuid.uuid4())[:8]}"
-    password_input = st.text_input("Enter password:", type="password", key=page_key)
+    
+    password_input = st.text_input("Enter password:", type="password")
+    
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        btn_key = f"login_{str(uuid.uuid4())[:8]}"
-        if st.button("🔓 Login", use_container_width=True, key=btn_key):
+        if st.button("🔓 Login", use_container_width=True):
             if password_input == DASHBOARD_PASSWORD:
                 st.session_state.authenticated = True
                 try:
@@ -30,15 +32,16 @@ if not st.session_state.authenticated:
                     components.html(
                         f'''
                         <script>
-                            document.cookie = "auth_cookie={DASHBOARD_PASSWORD}; path=/; max-age=" + 30*24*60*60;
-                            window.parent.postMessage("reload", "*");
+                            document.cookie = "auth_cookie={DASHBOARD_PASSWORD}; path=/; max-age=2592000";
+                            window.parent.location.reload();
                         </script>
                         ''',
                         height=0
                     )
                 except:
                     pass
-                st.rerun()
+                st.success("Logging in... please wait.")
+                st.stop()
             else:
                 st.error("❌ Incorrect password")
     st.stop()

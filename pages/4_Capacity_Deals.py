@@ -13,23 +13,42 @@ st.set_page_config(page_title="Capacity Deals", page_icon="🤝", layout="wide")
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "Jetha2026!")
 
 if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
+    try:
+        if 'auth_cookie' in st.context.cookies and st.context.cookies['auth_cookie'] == DASHBOARD_PASSWORD:
+            st.session_state.authenticated = True
+        else:
+            st.session_state.authenticated = False
+    except:
+        st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     st.title("🔒 AI Datacenter Tracker")
     st.markdown("### Login Required")
     
-    password_input = st.text_input("Enter password:", type="password", key="password")
+    password_input = st.text_input("Enter password:", type="password")
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🔓 Login", use_container_width=True):
             if password_input == DASHBOARD_PASSWORD:
                 st.session_state.authenticated = True
-                st.rerun()
+                try:
+                    import streamlit.components.v1 as components
+                    components.html(
+                        f'''
+                        <script>
+                            document.cookie = "auth_cookie={DASHBOARD_PASSWORD}; path=/; max-age=2592000";
+                            window.parent.location.reload();
+                        </script>
+                        ''',
+                        height=0
+                    )
+                except:
+                    pass
+                st.success("Logging in... please wait.")
+                st.stop()
             else:
                 st.error("❌ Incorrect password")
-    
     st.stop()
 
 # ============================================
