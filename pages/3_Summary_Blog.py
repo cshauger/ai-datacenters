@@ -57,9 +57,6 @@ if not st.session_state.authenticated:
             else:
                 st.error("❌ Incorrect password")
     st.stop()
-            else:
-                st.error("❌ Incorrect password")
-    st.stop()
 
 # ============================================
 # AUTHENTICATED CONTENT BELOW
