@@ -13,6 +13,8 @@ interface Datacenter {
   source_url?: string;
   permitting_status?: string;
   permitting_notes?: string;
+  utility_provider?: string;
+  municipality?: string;
 }
 
 const STATUS_ORDER = [
@@ -77,6 +79,12 @@ export default function DatacentersKanban() {
                               <div className="text-green-700 font-medium mb-1">⚡ {dc.estimated_capacity_mw ? `${dc.estimated_capacity_mw} MW` : 'TBD MW'}</div>
                               
                               <div className="text-gray-500 mb-2">📍 {dc.location || 'Location TBD'}</div>
+                              
+                              
+                              <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100">
+                                <div className="mb-0.5">🏢 <strong>Utility:</strong> {dc.utility_provider || 'Unknown'}</div>
+                                <div>🏛️ <strong>Municipality:</strong> {dc.municipality || 'Unknown'}</div>
+                              </div>
                               
                               <div className="mt-2 pt-2 border-t border-gray-100">
                                 <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
