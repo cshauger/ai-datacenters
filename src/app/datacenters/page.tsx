@@ -11,6 +11,8 @@ interface Datacenter {
   status: string;
   estimated_capacity_mw: number;
   source_url?: string;
+  permitting_status?: string;
+  permitting_notes?: string;
 }
 
 const STATUS_ORDER = [
@@ -73,7 +75,21 @@ export default function DatacentersKanban() {
                             <div key={dc.id} className="bg-white p-3 rounded shadow-sm border border-blue-100 border-l-4 border-l-blue-500 text-sm">
                               <div className="font-bold text-gray-800 mb-2">{dc.name || 'Unnamed Property'}</div>
                               <div className="text-green-700 font-medium mb-1">⚡ {dc.estimated_capacity_mw ? `${dc.estimated_capacity_mw} MW` : 'TBD MW'}</div>
+                              
                               <div className="text-gray-500 mb-2">📍 {dc.location || 'Location TBD'}</div>
+                              
+                              <div className="mt-2 pt-2 border-t border-gray-100">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                                  dc.permitting_status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                  dc.permitting_status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  dc.permitting_status === 'Denied/Challenged' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  📝 Permitting: {dc.permitting_status || 'Unknown'}
+                                </span>
+                                {dc.permitting_notes && <p className="text-xs text-gray-500 mt-1 italic">{dc.permitting_notes}</p>}
+                              </div>
+
                               {dc.source_url && (
                                 <a href={dc.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs block mt-2 border-t pt-2">
                                   🔗 Source Link
