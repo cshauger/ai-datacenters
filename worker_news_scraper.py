@@ -12,7 +12,7 @@ if not PG_URI:
     print("No database URL")
     exit(1)
 
-GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBQ6WuuyYwI-IBdBzl4iO67lbBjwvenmic")
+GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = "8259734518"
 
