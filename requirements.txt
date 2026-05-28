@@ -6,3 +6,5 @@ requests
 duckduckgo-search
 
 schedule==1.2.1
+playwright==1.42.0
+beautifulsoup4==4.12.3
