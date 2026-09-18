@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import schedule
+from worker_npm_tracker import run_npm_scraper
 import re
 from datetime import datetime, timezone, timedelta
 
@@ -265,6 +266,7 @@ print("📅 Scheduled GPU scrape at 13:00 UTC (5:00 AM PT)")
 
 # Schedule daily Hardware scrape at 7 AM PT (15:00 UTC)
 schedule.every().day.at("15:00").do(scrape_hardware)
+schedule.every().day.at("16:00").do(run_npm_scraper)
 print("📅 Scheduled Hardware scrape at 15:00 UTC (7:00 AM PT)")
 
 # Run once on startup for testing
