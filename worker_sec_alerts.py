@@ -102,5 +102,16 @@ def check_sec_filings():
     cur.close()
     conn.close()
 
+import time
+import schedule
+
 if __name__ == "__main__":
+    print("Starting SEC Alerts Scheduler...")
     check_sec_filings()
+    
+    schedule.every(2).hours.do(check_sec_filings)
+    
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
