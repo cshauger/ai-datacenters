@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CAS Research | Jetha Global",
-  description: "Proprietary AI Infrastructure Intelligence",
+  title: "CAS Research | Technology Equity Research",
+  description: "Technology Equity Research for Long-Term Investors",
 };
 
 export default function RootLayout({
@@ -29,19 +29,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#F8F9FA]">
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2 cursor-pointer group">
-              <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center group-hover:bg-gray-800 transition-colors">
-                <span className="text-white font-bold text-sm">CR</span>
-              </div>
-              <span className="font-bold text-xl tracking-tight text-gray-900 group-hover:text-gray-700 transition-colors">CAS Research</span>
+        <header className="bg-[#040A18] border-b border-gray-800 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center cursor-pointer">
+              <span className="font-semibold text-2xl tracking-tight text-white hover:text-gray-300 transition-colors">CAS Research</span>
             </Link>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-500 hover:text-gray-900 font-medium text-sm py-5 transition-colors">Home</Link>
-              <Link href="/datacenters" className="text-gray-500 hover:text-gray-900 font-medium text-sm py-5 transition-colors">Infrastructure</Link>
-              <Link href="/gpu" className="text-gray-500 hover:text-gray-900 font-medium text-sm py-5 transition-colors">GPU Tracker</Link>
-              <Link href="/npm" className="text-gray-500 hover:text-gray-900 font-medium text-sm py-5 transition-colors">Alternative Data</Link>
+              <Link href="/" className="text-white font-medium text-sm border-b-2 border-blue-600 py-5">Home</Link>
+              <Link href="/blog" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Research</Link>
+              <Link href="/datacenters" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Insights</Link>
+              <Link href="/about" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">About</Link>
+              <Link href="/contact" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Contact</Link>
             </nav>
           </div>
         </header>
