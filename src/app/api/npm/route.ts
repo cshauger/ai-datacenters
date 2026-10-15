@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
-
 export async function GET() {
+  let client = null;
   try {
-    const client = await pool.connect();
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not defined in environment.");
+    }
+    
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    client = await pool.connect();
     
     // Get rolling 7-day average of daily downloads for the last 30 days
     const query = `
@@ -39,21 +44,26 @@ export async function GET() {
     `;
     
     const { rows } = await client.query(query);
-    client.release();
     
     // Format data for Recharts
-    // We want an array of objects where each object is a date, and keys are the tickers
     const chartDataMap = new Map();
     
     rows.forEach(row => {
-      const dateStr = new Date(row.download_date).toISOString().split('T')[0];
+      // Safely parse the date
+      let dateObj;
+      if (row.download_date instanceof Date) {
+          dateObj = row.download_date;
+      } else {
+          dateObj = new Date(row.download_date);
+      }
+      
+      const dateStr = dateObj.toISOString().split('T')[0];
       
       if (!chartDataMap.has(dateStr)) {
         chartDataMap.set(dateStr, { date: dateStr });
       }
       
       const dayData = chartDataMap.get(dateStr);
-      // Store the 7-day rolling average instead of raw daily to smooth weekends
       dayData[row.company_ticker] = Math.round(row.rolling_avg);
     });
     
@@ -62,6 +72,9 @@ export async function GET() {
     return NextResponse.json({ success: true, data: formattedData });
   } catch (error) {
     console.error('Database Error:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch data' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  } finally {
+      if (client) client.release();
   }
 }
