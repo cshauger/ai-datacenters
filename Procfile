@@ -1,1 +1,1 @@
-web: npm start -- -p 8080
+web: next start -H 0.0.0.0 -p 8080
