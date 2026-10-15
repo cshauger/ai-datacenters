@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CAS Research",
-  description: "Technology Equity Research",
+  title: "CAS Research | Technology Equity Research",
+  description: "Technology Equity Research for Long-Term Investors",
 };
 
 export default function RootLayout({
@@ -24,25 +24,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="min-h-screen flex flex-col bg-white text-black font-sans">
-        <header className="border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link href="/" className="font-bold text-2xl tracking-tight text-gray-900">
-                CAS Research
-              </Link>
-              <nav className="hidden md:flex space-x-6 pl-6 border-l border-gray-200">
-                <Link href="/" className="text-gray-600 hover:text-black font-medium text-sm">Home</Link>
-                <Link href="/datacenters" className="text-gray-600 hover:text-black font-medium text-sm">DC Tracker</Link>
-                <Link href="/gpu" className="text-gray-600 hover:text-black font-medium text-sm">GPU Pricing</Link>
-                <Link href="/npm" className="text-gray-600 hover:text-black font-medium text-sm">NPM Data</Link>
-              </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/login" className="hidden sm:block text-sm font-medium text-gray-600 hover:text-black">Sign in</Link>
-              <button className="bg-[#FF6719] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#e55c16] transition-colors">Subscribe</button>
-            </div>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-white">
+        <header className="bg-[#030A1D] border-b border-gray-800 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center cursor-pointer">
+              <span className="font-semibold text-2xl tracking-tight text-white hover:text-gray-300 transition-colors">CAS Research</span>
+            </Link>
+            <nav className="hidden md:flex space-x-8">
+              <Link href="/" className="text-white font-medium text-sm border-b-2 border-blue-600 py-5">Home</Link>
+              <Link href="/blog" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Research</Link>
+              <Link href="/datacenters" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Insights</Link>
+              <Link href="/about" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">About</Link>
+              <Link href="/contact" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Contact</Link>
+            </nav>
           </div>
         </header>
         {children}
