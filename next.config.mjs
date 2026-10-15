@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: 'standalone'
+    // output: 'standalone' removed for standard DO build
 };
 
 export default nextConfig;
