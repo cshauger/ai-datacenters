@@ -3,13 +3,15 @@ import urllib.request
 import json
 import psycopg2
 from datetime import datetime
+import time
+import schedule
+import sys
 
 PG_URI = os.environ.get("DATABASE_URL")
 if not PG_URI:
     print("No database URL")
-    exit(1)
+    sys.exit(1)
 
-# Configure Telegram credentials
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = "8259734518"
 
@@ -44,7 +46,6 @@ def check_sec_filings():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Ensure table exists
     cur.execute("""
         CREATE TABLE IF NOT EXISTS sec_alerts (
             id SERIAL PRIMARY KEY,
@@ -69,11 +70,8 @@ def check_sec_filings():
             data = json.loads(res.read().decode('utf-8'))
             filings = data['filings']['recent']
             
-            # Check the 5 most recent filings
             for i in range(min(5, len(filings['form']))):
                 form = filings['form'][i]
-                
-                # Check if it's a form we care about
                 if form in comp['forms'] or any(f in form for f in comp['forms']):
                     date = filings['filingDate'][i]
                     acc_num = filings['accessionNumber'][i]
@@ -81,37 +79,37 @@ def check_sec_filings():
                     acc_no_dash = acc_num.replace('-', '')
                     link = f"https://www.sec.gov/Archives/edgar/data/{int(comp['cik'])}/{acc_no_dash}/{doc}"
                     
-                    # Check if we already alerted
                     cur.execute("SELECT id FROM sec_alerts WHERE accession_number = %s", (acc_num,))
                     if not cur.fetchone():
-                        # Log it
                         cur.execute("""
                             INSERT INTO sec_alerts (company, filing_type, accession_number, doc_link, date_filed)
                             VALUES (%s, %s, %s, %s, %s)
                         """, (comp['name'], form, acc_num, link, date))
                         conn.commit()
-                        
-                        # Send alert
                         msg = f"🚨 <b>New SEC Filing Alert</b>\n\n<b>Company:</b> {comp['name']}\n<b>Filing:</b> {form}\n<b>Date:</b> {date}\n\n<a href='{link}'>View Document</a>"
                         send_telegram_alert(msg)
                         print(f"New alert generated for {comp['name']} - {form}")
-                    
         except Exception as e:
             print(f"Error checking {comp['name']}: {e}")
 
     cur.close()
     conn.close()
 
-import time
-import schedule
-
 if __name__ == "__main__":
-    print("Starting SEC Alerts Scheduler...")
-    check_sec_filings()
-    
+    print("Starting SEC Alerts Scheduler...", flush=True)
+    try:
+        check_sec_filings()
+    except Exception as e:
+        print(f"CRITICAL STARTUP ERROR: {e}", flush=True)
+        time.sleep(600)  # Sleep so the container doesn't exit immediately and we can read the logs
+        sys.exit(1)
+        
     schedule.every(2).hours.do(check_sec_filings)
     
+    print("Entering loop...", flush=True)
     while True:
-        schedule.run_pending()
+        try:
+            schedule.run_pending()
+        except Exception as e:
+            print(f"CRITICAL LOOP ERROR: {e}", flush=True)
         time.sleep(60)
-

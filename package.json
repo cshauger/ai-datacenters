@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start --hostname 0.0.0.0 --port 8080",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -25,6 +25,5 @@
     "postcss": "^8.5.30",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
-  },
-  "devDependencies": {}
+  }
 }
