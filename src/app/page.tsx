@@ -20,44 +20,35 @@ export default function Home() {
         {/* Circular chip graphic */}
         <div className="absolute right-[5%] top-1/2 -translate-y-1/2 w-64 h-64 lg:w-80 lg:h-80 hidden md:block">
           <div className="relative w-full h-full">
-            {/* Outer circle */}
             <div className="absolute inset-0 rounded-full border-2 border-blue-400/30"></div>
-            {/* Inner circle with chip pattern */}
             <div className="absolute inset-4 rounded-full border border-blue-400/50 bg-[#0a1628]/50 flex items-center justify-center">
               <svg className="w-32 h-32 lg:w-40 lg:h-40 text-blue-400/70" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-                {/* Chip outline */}
                 <rect x="25" y="25" width="50" height="50" strokeWidth="1.5" rx="4"/>
-                {/* Inner square */}
                 <rect x="35" y="35" width="30" height="30" strokeWidth="1" rx="2"/>
-                {/* Connection pins - top */}
                 <line x1="35" y1="25" x2="35" y2="15" strokeWidth="1.5"/>
                 <line x1="50" y1="25" x2="50" y2="15" strokeWidth="1.5"/>
                 <line x1="65" y1="25" x2="65" y2="15" strokeWidth="1.5"/>
-                {/* Connection pins - bottom */}
                 <line x1="35" y1="75" x2="35" y2="85" strokeWidth="1.5"/>
                 <line x1="50" y1="75" x2="50" y2="85" strokeWidth="1.5"/>
                 <line x1="65" y1="75" x2="65" y2="85" strokeWidth="1.5"/>
-                {/* Connection pins - left */}
                 <line x1="25" y1="35" x2="15" y2="35" strokeWidth="1.5"/>
                 <line x1="25" y1="50" x2="15" y2="50" strokeWidth="1.5"/>
                 <line x1="25" y1="65" x2="15" y2="65" strokeWidth="1.5"/>
-                {/* Connection pins - right */}
                 <line x1="75" y1="35" x2="85" y2="35" strokeWidth="1.5"/>
                 <line x1="75" y1="50" x2="85" y2="50" strokeWidth="1.5"/>
                 <line x1="75" y1="65" x2="85" y2="65" strokeWidth="1.5"/>
-                {/* Center dot */}
                 <circle cx="50" cy="50" r="3" fill="currentColor"/>
               </svg>
             </div>
-            {/* Decorative arc */}
             <svg className="absolute -right-8 top-0 w-24 h-full text-blue-400/20" viewBox="0 0 50 200">
               <path d="M 0 20 Q 40 100 0 180" fill="none" stroke="currentColor" strokeWidth="1"/>
             </svg>
           </div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 relative z-10">
-          <div className="max-w-2xl">
+        {/* Reduced left padding - was px-4 sm:px-6 lg:px-8, now px-1 sm:px-2 lg:px-4 */}
+        <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4 py-16 lg:py-24 relative z-10">
+          <div className="max-w-2xl pl-2 sm:pl-3 lg:pl-4">
             <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-2 leading-[1.1]">
               CAS<br />Research
             </h1>
@@ -69,7 +60,7 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" id="research">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-12" id="research">
         
         {/* SECTION: OUR RESEARCH COVERAGE */}
         <div className="flex items-center justify-center mb-12">
@@ -129,7 +120,7 @@ export default function Home() {
         </div>
 
         {/* INTERNAL DASHBOARDS */}
-        <div className="mt-16 pt-12 border-t border-gray-100">
+        <div className="mt-12 pt-10 border-t border-gray-100">
           <div className="flex items-center justify-center mb-8">
             <h2 className="text-xs font-bold tracking-[0.2em] text-gray-400 uppercase">Internal Tracking Dashboards</h2>
           </div>
