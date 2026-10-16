@@ -10,7 +10,6 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "Database not configured" }, { status: 500 });
     }
     
-    console.log("Attempting to connect to pool...");
     const pool = new Pool({
       connectionString: dbUrl,
       ssl: {
@@ -19,9 +18,7 @@ export async function GET() {
     });
 
     client = await pool.connect();
-    console.log("Pool connected successfully");
     
-    // Get rolling 7-day average of daily downloads for the last 30 days
     const query = `
       WITH DailyTotals AS (
         SELECT 
@@ -48,14 +45,13 @@ export async function GET() {
     `;
     
     const { rows } = await client.query(query);
-    console.log(`Fetched ${rows.length} rows`);
     
-    // Format data for Recharts
     const chartDataMap = new Map();
     
     rows.forEach(row => {
-      // Create date safely in JS
-      const dateStr = new Date(row.download_date).toISOString().split('T')[0];
+      // Use UTC methods to guarantee timezone safety when converting from postgres DATE
+      const dateObj = new Date(row.download_date);
+      const dateStr = dateObj.toISOString().split('T')[0];
       
       if (!chartDataMap.has(dateStr)) {
         chartDataMap.set(dateStr, { date: dateStr });
@@ -66,7 +62,6 @@ export async function GET() {
     });
     
     const formattedData = Array.from(chartDataMap.values());
-    console.log("Successfully formatted data");
     
     return NextResponse.json({ success: true, data: formattedData });
   } catch (error: any) {
