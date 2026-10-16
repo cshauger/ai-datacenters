@@ -4,18 +4,22 @@ import { Pool } from 'pg';
 export async function GET() {
   let client = null;
   try {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL is not defined in environment.");
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      console.error("DATABASE_URL is totally missing");
+      return NextResponse.json({ success: false, error: "Database not configured" }, { status: 500 });
     }
     
+    console.log("Attempting to connect to pool...");
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: dbUrl,
       ssl: {
         rejectUnauthorized: false
       }
     });
 
     client = await pool.connect();
+    console.log("Pool connected successfully");
     
     // Get rolling 7-day average of daily downloads for the last 30 days
     const query = `
@@ -44,20 +48,14 @@ export async function GET() {
     `;
     
     const { rows } = await client.query(query);
+    console.log(`Fetched ${rows.length} rows`);
     
     // Format data for Recharts
     const chartDataMap = new Map();
     
     rows.forEach(row => {
-      // Safely parse the date
-      let dateObj;
-      if (row.download_date instanceof Date) {
-          dateObj = row.download_date;
-      } else {
-          dateObj = new Date(row.download_date);
-      }
-      
-      const dateStr = dateObj.toISOString().split('T')[0];
+      // Create date safely in JS
+      const dateStr = new Date(row.download_date).toISOString().split('T')[0];
       
       if (!chartDataMap.has(dateStr)) {
         chartDataMap.set(dateStr, { date: dateStr });
@@ -68,12 +66,12 @@ export async function GET() {
     });
     
     const formattedData = Array.from(chartDataMap.values());
+    console.log("Successfully formatted data");
     
     return NextResponse.json({ success: true, data: formattedData });
-  } catch (error) {
-    console.error('Database Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  } catch (error: any) {
+    console.error('API Error:', error.message || error);
+    return NextResponse.json({ success: false, error: error.message || 'Unknown error' }, { status: 500 });
   } finally {
       if (client) client.release();
   }
