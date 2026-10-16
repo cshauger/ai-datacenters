@@ -4,24 +4,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
       
-      {/* NAVIGATION */}
-      <nav className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <span className="text-xl font-bold text-gray-900">CAS Research</span>
-            </div>
-            <div className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm font-medium">Home</Link>
-              <Link href="#research" className="text-gray-600 hover:text-gray-900 text-sm font-medium">Research</Link>
-              <Link href="#insights" className="text-gray-600 hover:text-gray-900 text-sm font-medium">Insights</Link>
-              <Link href="#about" className="text-gray-600 hover:text-gray-900 text-sm font-medium">About</Link>
-              <Link href="#contact" className="text-gray-600 hover:text-gray-900 text-sm font-medium">Contact</Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* HERO SECTION */}
       <div className="bg-[#0a1628] text-white relative overflow-hidden">
         {/* Server rack background image */}
