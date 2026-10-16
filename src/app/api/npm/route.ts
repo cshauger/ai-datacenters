@@ -4,17 +4,19 @@ import { Pool } from 'pg';
 export async function GET() {
   let client = null;
   try {
-    const dbUrl = process.env.DATABASE_URL;
+    let dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
       console.error("DATABASE_URL is totally missing");
       return NextResponse.json({ success: false, error: "Database not configured" }, { status: 500 });
     }
     
+    // Fix SSL mode for newer pg versions
+    if (dbUrl.includes('sslmode=require')) {
+      dbUrl = dbUrl.replace('sslmode=require', 'sslmode=no-verify');
+    }
+    
     const pool = new Pool({
       connectionString: dbUrl,
-      ssl: {
-        rejectUnauthorized: false
-      }
     });
 
     client = await pool.connect();
@@ -49,7 +51,6 @@ export async function GET() {
     const chartDataMap = new Map();
     
     rows.forEach(row => {
-      // Use UTC methods to guarantee timezone safety when converting from postgres DATE
       const dateObj = new Date(row.download_date);
       const dateStr = dateObj.toISOString().split('T')[0];
       
