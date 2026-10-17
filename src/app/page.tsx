@@ -47,7 +47,7 @@ export default function Home() {
         </div>
         
         {/* Reduced left padding - was px-4 sm:px-6 lg:px-8, now px-1 sm:px-2 lg:px-4 */}
-        <div className="w-[95%] mx-auto max-w-none px-1 sm:px-2 lg:px-4 py-16 lg:py-24 relative z-10">
+        <div className="w-full px-8 md:px-16 max-w-none px-1 sm:px-2 lg:px-4 py-16 lg:py-24 relative z-10">
           <div className="max-w-2xl pl-2 sm:pl-3 lg:pl-4">
             <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-2 leading-[1.1]">
               CAS<br />Research
@@ -60,7 +60,7 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="w-[95%] mx-auto max-w-none px-2 sm:px-4 lg:px-6 py-12" id="research">
+      <main className="w-full px-8 md:px-16 max-w-none px-2 sm:px-4 lg:px-6 py-12" id="research">
         
         {/* SECTION: OUR RESEARCH COVERAGE */}
         <div className="flex items-center justify-center mb-12">
