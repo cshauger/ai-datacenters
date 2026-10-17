@@ -30,7 +30,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white">
         <header className="bg-[#030A1D] border-b border-gray-800 sticky top-0 z-50">
-          <div className="w-full px-8 md:px-16 max-w-none px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="w-full px-4 md:px-12 lg:px-16 h-16 flex items-center justify-between">
             <Link href="/" className="flex items-center cursor-pointer">
               <span className="font-semibold text-2xl tracking-tight text-white hover:text-gray-300 transition-colors">CAS Research</span>
             </Link>
