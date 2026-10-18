@@ -1,6 +1,20 @@
 import Link from 'next/link';
 
-export default function Home() {
+import pool from "@/lib/db";
+
+export const revalidate = 3600; // Revalidate every hour
+
+export default async function Home() {
+  let earningsHtml = "";
+  try {
+    const res = await pool.query(`SELECT html_content FROM daily_reports WHERE summary = \'Earnings Calendar\' ORDER BY report_date DESC LIMIT 1`);
+    if (res.rows.length > 0) {
+      earningsHtml = res.rows[0].html_content;
+    }
+  } catch (error) {
+    console.error("Failed to fetch earnings calendar:", error);
+  }
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
       
@@ -62,6 +76,14 @@ export default function Home() {
 
       <main className="w-full px-4 md:px-12 lg:px-16 py-12" id="research">
         
+        
+        {/* EARNINGS CALENDAR SECTION */}
+        {earningsHtml && (
+          <div className="mb-16">
+            <div dangerouslySetInnerHTML={{ __html: earningsHtml }} />
+          </div>
+        )}
+
         {/* SECTION: OUR RESEARCH COVERAGE */}
         <div className="flex items-center justify-center mb-12">
           <div className="h-px bg-gray-200 flex-1 max-w-[200px]"></div>
