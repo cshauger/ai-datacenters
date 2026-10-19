@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from 'next/link';
+import Header from "@/components/Header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,20 +29,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white">
-        <header className="bg-[#030A1D] border-b border-gray-800 sticky top-0 z-50">
-          <div className="w-full px-4 md:px-12 lg:px-16 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center cursor-pointer">
-              <span className="font-semibold text-2xl tracking-tight text-white hover:text-gray-300 transition-colors">CAS Research</span>
-            </Link>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-white font-medium text-sm border-b-2 border-blue-600 py-5">Home</Link>
-              <Link href="/blog" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Research</Link>
-              <Link href="/datacenters" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Insights</Link>
-              <Link href="/about" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">About</Link>
-              <Link href="/contact" className="text-gray-300 hover:text-white font-medium text-sm py-5 transition-colors">Contact</Link>
-            </nav>
-          </div>
-        </header>
+        <Header />
         {children}
       </body>
     </html>
