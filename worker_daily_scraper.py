@@ -91,65 +91,49 @@ CURRENT_PRICING = [
 ]
 
 def dynamic_scrape_nebius():
-    """Uses Playwright headless browser to scrape Nebius live pricing and bypass anti-bot screens."""
-    print("🌐 Launching Playwright to scrape Nebius pricing...")
+    """Uses requests to scrape Nebius live pricing natively."""
+    print("🌐 Scraping Nebius pricing...")
     nebius_prices = []
     
     try:
+        import requests
         from bs4 import BeautifulSoup
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            
-            # Go to Nebius pricing page
-            page.goto("https://nebius.com/pricing", timeout=45000)
-            page.wait_for_timeout(5000) # Give it 5 seconds to get past Cloudflare check and render React
-            
-            text = page.content()
-            soup = BeautifulSoup(text, 'html.parser')
+        
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get("https://nebius.com/prices", headers=headers, timeout=15)
+        
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, 'html.parser')
             clean_text = soup.get_text(separator=' ', strip=True)
             
-            # Use regex to find the updated rates in the loaded text
-            # E.g. looking for "H200 ... $4.50"
-            prices = re.findall(r'(H100|H200|B200).*?\$([0-9.]+)', clean_text, re.IGNORECASE)
-            
-            # Filter and assign mapped values
-            h200_ondemand = None
-            h200_commit = None
-            b200_price = None
+            prices = re.findall(r'(H100|H200|B200|B300).*?\$([0-9.]+)', clean_text, re.IGNORECASE)
             
             for chip, price_str in prices:
                 chip_up = chip.upper()
                 price = float(price_str)
-                # Quick heuristic: commit prices usually lower than on-demand.
-                # Since we don't have perfect DOM paths, we'll assign reasonably.
-                if chip_up == "H200":
-                    if not h200_ondemand or price > h200_ondemand:
-                        h200_commit = h200_ondemand
-                        h200_ondemand = price
-                    else:
-                        h200_commit = price
-                if chip_up == "B200":
-                    b200_price = price
-            
-            browser.close()
-            
-            if h200_ondemand:
-                nebius_prices.append(("H200", "Nebius On-Demand", h200_ondemand))
-            if h200_commit:
-                nebius_prices.append(("H200", "Nebius Commitment", h200_commit))
-            if b200_price:
-                nebius_prices.append(("B200", "Nebius", b200_price))
-                
+                # Since they just list one main price now, we'll mark it as On-Demand
+                if chip_up == "H100":
+                    nebius_prices.append(("H100", "Nebius", price))
+                elif chip_up == "H200":
+                    nebius_prices.append(("H200", "Nebius", price))
+                elif chip_up == "B200":
+                    nebius_prices.append(("B200", "Nebius", price))
+                elif chip_up == "B300":
+                    nebius_prices.append(("B300", "Nebius", price))
+                    
+            # Deduplicate just in case
+            nebius_prices = list(set(nebius_prices))
             print(f"✅ Nebius dynamic scrape successful: {nebius_prices}")
+        else:
+            raise Exception(f"HTTP {resp.status_code}")
             
     except Exception as e:
-        print(f"❌ Failed to scrape Nebius via Playwright: {e}")
-        # Fallback to the old hardcoded baseline if site fails
+        print(f"❌ Failed to scrape Nebius: {e}")
+        # Fallback
         nebius_prices = [
-            ("H200", "Nebius Commitment", 2.30),
-            ("H200", "Nebius On-Demand", 3.50),
-            ("B200", "Nebius", 5.50),
+            ("H100", "Nebius", 4.50),
+            ("H200", "Nebius", 5.40),
+            ("B200", "Nebius", 8.50),
         ]
         
     return nebius_prices
