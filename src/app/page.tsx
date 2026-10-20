@@ -77,13 +77,6 @@ export default async function Home() {
       <main className="w-full px-4 md:px-12 lg:px-16 py-12" id="research">
         
         
-        {/* EARNINGS CALENDAR SECTION */}
-        {earningsHtml && (
-          <div className="mb-16">
-            <div dangerouslySetInnerHTML={{ __html: earningsHtml }} />
-          </div>
-        )}
-
         {/* SECTION: OUR RESEARCH COVERAGE */}
         <div className="flex items-center justify-center mb-12">
           <div className="h-px bg-gray-200 flex-1 max-w-[200px]"></div>
