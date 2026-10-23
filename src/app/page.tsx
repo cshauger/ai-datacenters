@@ -1,20 +1,8 @@
 import Link from 'next/link';
 
-import pool from "@/lib/db";
-
 export const revalidate = 3600; // Revalidate every hour
 
 export default async function Home() {
-  let earningsHtml = "";
-  try {
-    const res = await pool.query(`SELECT html_content FROM daily_reports WHERE summary = \'Earnings Calendar\' ORDER BY report_date DESC LIMIT 1`);
-    if (res.rows.length > 0) {
-      earningsHtml = res.rows[0].html_content;
-    }
-  } catch (error) {
-    console.error("Failed to fetch earnings calendar:", error);
-  }
-
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
       
