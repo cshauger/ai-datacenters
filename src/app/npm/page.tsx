@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Label } from 'recharts';
 
 export default function NPMPage() {
   const [data, setData] = useState<any[]>([]);
@@ -32,6 +32,12 @@ export default function NPMPage() {
   const formatYAxis = (tickItem: any) => `${tickItem.toFixed(0)}%`;
 
   const formatTooltip = (value: any) => `${Number(value).toFixed(1)}%`;
+
+  const yAxisConfig = (
+    <YAxis tickFormatter={formatYAxis} tick={{fontSize: 12}} width={75} domain={['auto', 'auto']}>
+      <Label value="W/W Growth %" angle={-90} position="insideLeft" offset={-5} style={{textAnchor: 'middle', fontSize: 12, fill: '#6b7280'}} />
+    </YAxis>
+  );
 
   const colors = ['#2563EB', '#16A34A', '#D97706', '#DC2626', '#9333EA', '#0891B2'];
 
@@ -66,9 +72,10 @@ export default function NPMPage() {
               <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} minTickGap={30} />
-                <YAxis tickFormatter={formatYAxis} tick={{fontSize: 12}} width={80} />
+                {yAxisConfig}
                 <Tooltip formatter={formatTooltip} />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={1} />
                 {databases.map((ticker, i) => (
                   <Line key={ticker} type="monotone" dataKey={ticker} stroke={colors[i % colors.length]} strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                 ))}
@@ -85,9 +92,10 @@ export default function NPMPage() {
               <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} minTickGap={30} />
-                <YAxis tickFormatter={formatYAxis} tick={{fontSize: 12}} width={80} />
+                {yAxisConfig}
                 <Tooltip formatter={formatTooltip} />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={1} />
                 {infrastructure.map((ticker, i) => (
                   <Line key={ticker} type="monotone" dataKey={ticker} stroke={colors[i % colors.length]} strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                 ))}
@@ -104,9 +112,10 @@ export default function NPMPage() {
               <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} minTickGap={30} />
-                <YAxis tickFormatter={formatYAxis} tick={{fontSize: 12}} width={80} />
+                {yAxisConfig}
                 <Tooltip formatter={formatTooltip} />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" strokeWidth={1} />
                 {ecommerce.map((ticker, i) => (
                   <Line key={ticker} type="monotone" dataKey={ticker} stroke={colors[i % colors.length]} strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
                 ))}
