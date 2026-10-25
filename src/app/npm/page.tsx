@@ -29,15 +29,9 @@ export default function NPMPage() {
     fetchData();
   }, []);
 
-  const formatYAxis = (tickItem: any) => {
-    if (tickItem >= 1000000) return `${(tickItem / 1000000).toFixed(1)}M`;
-    if (tickItem >= 1000) return `${(tickItem / 1000).toFixed(0)}k`;
-    return tickItem.toString();
-  };
+  const formatYAxis = (tickItem: any) => `${tickItem.toFixed(0)}%`;
 
-  const formatTooltip = (value: any) => {
-    return new Intl.NumberFormat('en-US').format(value);
-  };
+  const formatTooltip = (value: any) => `${Number(value).toFixed(1)}%`;
 
   const colors = ['#2563EB', '#16A34A', '#D97706', '#DC2626', '#9333EA', '#0891B2'];
 
@@ -57,7 +51,7 @@ export default function NPMPage() {
           <Link href="/" className="text-sm font-bold text-blue-600 uppercase tracking-wide hover:underline mb-4 inline-block">&larr; Back to Research</Link>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">NPM Alternative Data Tracker</h1>
           <p className="text-xl text-gray-600 max-w-3xl">
-            Real-time developer mindshare tracking. We scrape the NPM registry daily to track SDK adoption across publicly traded infrastructure and software companies. All charts represent a 7-day rolling average to normalize weekend developer drop-off.
+            Real-time developer mindshare tracking. We scrape the NPM registry daily to track SDK adoption across publicly traded infrastructure and software companies. Charts show week-over-week growth rates derived from 7-day rolling averages — normalizing weekend effects and making cross-company trends directly comparable.
           </p>
         </div>
       </div>

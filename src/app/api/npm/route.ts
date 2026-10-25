@@ -31,18 +31,30 @@ export async function GET() {
         FROM npm_data_tracker
         WHERE daily_downloads > 0
         GROUP BY download_date, company_ticker, company_name
+      ),
+      RollingAvgs AS (
+        SELECT 
+          download_date,
+          company_ticker,
+          company_name,
+          total_downloads,
+          AVG(total_downloads) OVER (
+            PARTITION BY company_ticker 
+            ORDER BY download_date 
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+          ) as rolling_avg
+        FROM DailyTotals
       )
       SELECT 
         download_date,
         company_ticker,
         company_name,
-        total_downloads,
-        AVG(total_downloads) OVER (
+        rolling_avg,
+        ((rolling_avg / NULLIF(LAG(rolling_avg, 7) OVER (
           PARTITION BY company_ticker 
-          ORDER BY download_date 
-          ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-        ) as rolling_avg
-      FROM DailyTotals
+          ORDER BY download_date
+        ), 0)) - 1) * 100 as wow_growth
+      FROM RollingAvgs
       ORDER BY download_date ASC, company_ticker ASC;
     `;
     
@@ -58,8 +70,10 @@ export async function GET() {
         chartDataMap.set(dateStr, { date: dateStr });
       }
       
+      if (row.wow_growth == null) return; // skip days without a prior-week baseline
+      
       const dayData = chartDataMap.get(dateStr);
-      dayData[row.company_ticker] = Math.round(row.rolling_avg);
+      dayData[row.company_ticker] = Math.round(row.wow_growth * 10) / 10;
     });
     
     const formattedData = Array.from(chartDataMap.values());
